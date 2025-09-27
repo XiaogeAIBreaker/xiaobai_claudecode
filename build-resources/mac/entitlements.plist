@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- 允许网络访问 -->
+  <key>com.apple.security.network.client</key>
+  <true/>
+
+  <!-- 允许网络服务器（用于开发模式） -->
+  <key>com.apple.security.network.server</key>
+  <true/>
+
+  <!-- 允许文件读写访问 -->
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
+
+  <!-- 允许访问下载目录 -->
+  <key>com.apple.security.files.downloads.read-write</key>
+  <true/>
+
+  <!-- 允许JIT编译（Electron需要） -->
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+
+  <!-- 允许动态库加载 -->
+  <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+  <true/>
+
+  <!-- 允许调试器连接（开发用） -->
+  <key>com.apple.security.cs.debugger</key>
+  <true/>
+
+  <!-- 禁用库验证以支持第三方模块 -->
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+
+  <!-- 允许执行未签名的可执行文件 -->
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+
+  <!-- 硬化运行时兼容性 -->
+  <key>com.apple.security.device.audio-input</key>
+  <false/>
+
+  <key>com.apple.security.device.camera</key>
+  <false/>
+
+  <!-- 允许访问用户目录 -->
+  <key>com.apple.security.personal-information.addressbook</key>
+  <false/>
+
+  <key>com.apple.security.personal-information.calendars</key>
+  <false/>
+
+  <key>com.apple.security.personal-information.location</key>
+  <false/>
+
+  <key>com.apple.security.personal-information.photos-library</key>
+  <false/>
+</dict>
+</plist>

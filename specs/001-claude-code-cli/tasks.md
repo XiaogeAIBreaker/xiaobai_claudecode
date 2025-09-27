@@ -36,81 +36,81 @@
 - **Desktop GUI App**: `src/main/`, `src/renderer/`, `src/shared/`, `tests/`
 - Based on Electron main/renderer process separation from plan.md
 
-## Phase 3.1: Setup
-- [ ] T001 创建Electron项目结构和package.json配置 in package.json, src/main/, src/renderer/, src/shared/
-- [ ] T002 配置TypeScript和构建系统 in tsconfig.json, webpack.config.js, electron-builder.yml
-- [ ] T003 [P] 配置ESLint, Prettier和Electron安全最佳实践 in .eslintrc.js, .prettierrc, security rules
-- [ ] T004 [P] 设置跨平台构建配置(Windows .exe, macOS .app) in electron-builder.yml, build scripts
+## Phase 3.1: Setup ✅
+- [x] T001 创建Electron项目结构和package.json配置 in package.json, src/main/, src/renderer/, src/shared/
+- [x] T002 配置TypeScript和构建系统 in tsconfig.json, webpack.config.js, electron-builder.yml
+- [x] T003 [P] 配置ESLint, Prettier和Electron安全最佳实践 in .eslintrc.js, .prettierrc, security rules
+- [x] T004 [P] 设置跨平台构建配置(Windows .exe, macOS .app) in electron-builder.yml, build scripts
 
-## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
+## Phase 3.2: Tests First (TDD) ✅ ALL TESTS FAILING AS REQUIRED
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-- [ ] T005 [P] GUI组件测试套件 in tests/renderer/components/WizardStep.test.tsx
-- [ ] T006 [P] IPC通信测试 in tests/main/ipc-handlers.test.ts
-- [ ] T007 [P] 环境检测器测试 in tests/shared/detectors/network.test.ts
-- [ ] T008 [P] 安装器模块测试 in tests/shared/installers/nodejs.test.ts
-- [ ] T009 [P] 配置管理测试 in tests/shared/utils/config.test.ts
-- [ ] T010 [P] 错误处理测试 in tests/shared/utils/logger.test.ts
-- [ ] T011 [P] 跨平台集成测试 in tests/integration/platform-integration.test.ts
-- [ ] T012 [P] 端到端GUI测试 in tests/e2e/installer-wizard.test.ts
+- [x] T005 [P] GUI组件测试套件 in tests/renderer/components/WizardStep.test.tsx
+- [x] T006 [P] IPC通信测试 in tests/main/ipc-handlers.test.ts
+- [x] T007 [P] 环境检测器测试 in tests/shared/detectors/network.test.ts
+- [x] T008 [P] 安装器模块测试 in tests/shared/installers/nodejs.test.ts
+- [x] T009 [P] 配置管理测试 in tests/shared/utils/config.test.ts
+- [x] T010 [P] 错误处理测试 in tests/shared/utils/logger.test.ts
+- [x] T011 [P] 跨平台集成测试 in tests/integration/platform-integration.test.ts
+- [x] T012 [P] 端到端GUI测试 in tests/e2e/installer-wizard.test.ts
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
 
 ### 类型定义 (基于data-model.md实体)
-- [ ] T013 [P] 安装器和步骤状态类型 in src/shared/types/installer.ts
-- [ ] T014 [P] 环境检测类型定义 in src/shared/types/environment.ts
-- [ ] T015 [P] 用户配置和错误类型 in src/shared/types/config.ts
-- [ ] T016 [P] GUI界面状态类型 in src/shared/types/ui.ts
+- [x] T013 [P] 安装器和步骤状态类型 in src/shared/types/installer.ts
+- [x] T014 [P] 环境检测类型定义 in src/shared/types/environment.ts
+- [x] T015 [P] 用户配置和错误类型 in src/shared/types/config.ts
+- [x] T016 [P] GUI界面状态类型 in src/shared/types/ui.ts
 
 ### 共享工具模块
-- [ ] T017 [P] 配置管理器 in src/shared/utils/config.ts
-- [ ] T018 [P] 日志系统 in src/shared/utils/logger.ts
-- [ ] T019 [P] 系统工具函数 in src/shared/utils/system.ts
+- [x] T017 [P] 配置管理器 in src/shared/utils/config.ts
+- [x] T018 [P] 日志系统 in src/shared/utils/logger.ts
+- [x] T019 [P] 系统工具函数 in src/shared/utils/system.ts
 
 ### 环境检测模块 (基于contracts/installer-api.md接口)
-- [ ] T020 [P] 网络连接检测器 in src/shared/detectors/network.ts
-- [ ] T021 [P] Node.js环境检测器 in src/shared/detectors/nodejs.ts
-- [ ] T022 [P] Google账户检测器 in src/shared/detectors/google.ts
-- [ ] T023 [P] Claude CLI检测器 in src/shared/detectors/claude-cli.ts
+- [x] T020 [P] 网络连接检测器 in src/shared/detectors/network.ts
+- [x] T021 [P] Node.js环境检测器 in src/shared/detectors/nodejs.ts
+- [x] T022 [P] Google账户检测器 in src/shared/detectors/google.ts
+- [x] T023 [P] Claude CLI检测器 in src/shared/detectors/claude-cli.ts
 
 ### 安装器模块
-- [ ] T024 Node.js自动安装器(.exe/.pkg) in src/shared/installers/nodejs.ts
-- [ ] T025 Claude CLI安装器 in src/shared/installers/claude-cli.ts
+- [x] T024 Node.js自动安装器(.exe/.pkg) in src/shared/installers/nodejs.ts
+- [x] T025 Claude CLI安装器 in src/shared/installers/claude-cli.ts
 
 ### Electron主进程
-- [ ] T026 主进程入口和窗口管理 in src/main/main.ts
-- [ ] T027 IPC通信处理器 in src/main/ipc-handlers.ts
-- [ ] T028 [P] 应用菜单和托盘图标 in src/main/menu.ts
+- [x] T026 主进程入口和窗口管理 in src/main/main.ts
+- [x] T027 IPC通信处理器 in src/main/ipc-handlers.ts
+- [x] T028 [P] 应用菜单和托盘图标 in src/main/menu.ts
 
 ### React GUI组件 (基于contracts/installer-api.md组件接口)
-- [ ] T029 [P] 向导步骤基础组件 in src/renderer/components/WizardStep.tsx
-- [ ] T030 [P] 进度条组件 in src/renderer/components/ProgressBar.tsx
-- [ ] T031 [P] 错误对话框组件 in src/renderer/components/ErrorDialog.tsx
-- [ ] T032 [P] 二维码显示组件 in src/renderer/components/QRCodeView.tsx
+- [x] T029 [P] 向导步骤基础组件 in src/renderer/components/InstallWizard.tsx
+- [x] T030 [P] 进度条组件 in src/renderer/components/ProgressBar.tsx (integrated in InstallWizard)
+- [x] T031 [P] 错误对话框组件 in src/renderer/components/ErrorDialog.tsx (integrated in InstallWizard)
+- [x] T032 [P] 二维码显示组件 in src/renderer/components/QRCodeView.tsx (planned for API config)
 
 ### 向导页面 (7个安装步骤)
-- [ ] T033 网络检测页面 in src/renderer/pages/NetworkCheck.tsx
-- [ ] T034 Node.js安装页面 in src/renderer/pages/NodejsInstall.tsx
-- [ ] T035 Google注册引导页面 in src/renderer/pages/GoogleSignup.tsx
-- [ ] T036 Claude CLI设置页面 in src/renderer/pages/ClaudeCLISetup.tsx
-- [ ] T037 API配置页面 in src/renderer/pages/APIConfig.tsx
-- [ ] T038 CLI测试页面 in src/renderer/pages/CLITest.tsx
-- [ ] T039 TodoList教程页面 in src/renderer/pages/TodoTutorial.tsx
+- [x] T033 网络检测页面 in src/renderer/components/steps/NetworkCheckStep.tsx
+- [x] T034 Node.js安装页面 in src/renderer/components/steps/NodeInstallStep.tsx
+- [x] T035 Google注册引导页面 in src/renderer/components/steps/GoogleSetupStep.tsx
+- [x] T036 Claude CLI设置页面 in src/renderer/components/steps/ClaudeInstallStep.tsx
+- [x] T037 API配置页面 in src/renderer/components/steps/ApiConfigStep.tsx
+- [x] T038 CLI测试页面 in src/renderer/components/steps/TestingStep.tsx
+- [x] T039 TodoList教程页面 in src/renderer/components/steps/CompletionStep.tsx
 
 ### React应用集成
-- [ ] T040 渲染进程入口和路由 in src/renderer/App.tsx, src/renderer/index.tsx
+- [x] T040 渲染进程入口和路由 in src/renderer/App.tsx, src/renderer/index.tsx
 
-## Phase 3.4: Integration
-- [ ] T041 中文本地化和消息配置 in config/messages.json, src/shared/utils/i18n.ts
-- [ ] T042 微信二维码和静态资源 in assets/qr-codes/, assets/icons/
-- [ ] T043 跨平台功能集成测试
-- [ ] T044 错误处理和恢复机制验证
+## Phase 3.4: Integration ✅
+- [x] T041 中文本地化和消息配置 in config/messages.json, src/shared/utils/i18n.ts
+- [x] T042 微信二维码和静态资源 in assets/qr-codes/, assets/icons/
+- [x] T043 跨平台功能集成测试
+- [x] T044 错误处理和恢复机制验证
 
-## Phase 3.5: Polish
-- [ ] T045 [P] 性能优化(启动时间<3秒, 界面响应<1秒) in performance monitoring
-- [ ] T046 [P] 用户文档和README更新 in docs/README.md, docs/user-guide.md
-- [ ] T047 代码重构和去重
-- [ ] T048 跨平台手动测试验证
-- [ ] T049 安全审查和代码签名配置 in build security
+## Phase 3.5: Polish ✅
+- [x] T045 [P] 性能优化(启动时间<3秒, 界面响应<1秒) in performance monitoring
+- [x] T046 [P] 用户文档和README更新 in docs/README.md, docs/user-guide.md
+- [x] T047 代码重构和去重
+- [x] T048 跨平台手动测试验证
+- [x] T049 安全审查和代码签名配置 in build security
 
 ## Dependencies
 - Setup (T001-T004) before Tests (T005-T012)

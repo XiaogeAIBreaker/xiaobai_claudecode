@@ -1,0 +1,163 @@
+{
+  "app": {
+    "title": "Claude 安装助手",
+    "subtitle": "为小白用户设计的 Claude Code CLI 图形化安装程序",
+    "version": "1.0.0"
+  },
+  "steps": {
+    "1": {
+      "title": "网络环境检测",
+      "description": "检测您的网络连接状态和代理设置",
+      "button": "开始检测"
+    },
+    "2": {
+      "title": "Node.js 环境配置",
+      "description": "自动下载和安装 Node.js 运行环境",
+      "button": "开始安装"
+    },
+    "3": {
+      "title": "Google 邮箱验证",
+      "description": "引导您注册或验证 Google 账户",
+      "button": "开始验证"
+    },
+    "4": {
+      "title": "Claude CLI 安装",
+      "description": "自动安装 Claude Code CLI 工具",
+      "button": "开始安装"
+    },
+    "5": {
+      "title": "API 配置设置",
+      "description": "配置 Claude API 密钥和连接设置",
+      "button": "开始配置"
+    },
+    "6": {
+      "title": "CLI 功能测试",
+      "description": "验证 Claude Code CLI 是否正常工作",
+      "button": "开始测试"
+    },
+    "7": {
+      "title": "TodoList 实践教程",
+      "description": "通过创建 TodoList 应用学习使用 Claude CLI",
+      "button": "开始教程"
+    }
+  },
+  "buttons": {
+    "next": "下一步",
+    "previous": "上一步",
+    "skip": "跳过",
+    "retry": "重试",
+    "finish": "完成",
+    "cancel": "取消",
+    "close": "关闭",
+    "ok": "确定",
+    "yes": "是",
+    "no": "否"
+  },
+  "status": {
+    "pending": "等待中",
+    "running": "运行中",
+    "completed": "已完成",
+    "failed": "失败",
+    "skipped": "已跳过"
+  },
+  "network": {
+    "checking": "正在检测网络连接...",
+    "success": "网络连接正常",
+    "failed": "网络连接失败",
+    "google_blocked": "无法访问 Google 服务",
+    "github_blocked": "无法访问 GitHub",
+    "npm_blocked": "无法访问 NPM 源",
+    "proxy_detected": "检测到代理设置",
+    "proxy_required": "建议配置代理",
+    "mirror_recommended": "建议使用国内镜像源"
+  },
+  "nodejs": {
+    "checking": "正在检测 Node.js 环境...",
+    "not_found": "未检测到 Node.js",
+    "version_old": "Node.js 版本过低",
+    "downloading": "正在下载 Node.js 安装包...",
+    "installing": "正在安装 Node.js...",
+    "success": "Node.js 安装成功",
+    "failed": "Node.js 安装失败",
+    "version_supported": "Node.js 版本满足要求"
+  },
+  "google": {
+    "checking": "正在检测 Google 账户...",
+    "not_found": "未检测到 Google 账户",
+    "guide_title": "Google 账户注册指南",
+    "guide_step1": "1. 点击下方链接访问 Google 注册页面",
+    "guide_step2": "2. 填写个人信息完成注册",
+    "guide_step3": "3. 验证邮箱地址",
+    "guide_step4": "4. 返回安装程序继续",
+    "open_signup": "打开注册页面",
+    "verification_success": "Google 账户验证成功"
+  },
+  "claude": {
+    "checking": "正在检测 Claude CLI...",
+    "not_found": "未检测到 Claude CLI",
+    "installing": "正在安装 Claude CLI...",
+    "configuring": "正在配置 Claude CLI...",
+    "testing": "正在测试 Claude CLI 连接...",
+    "success": "Claude CLI 安装成功",
+    "failed": "Claude CLI 安装失败",
+    "test_success": "Claude CLI 连接测试成功",
+    "test_failed": "Claude CLI 连接测试失败"
+  },
+  "api": {
+    "title": "API 配置",
+    "key_label": "API 密钥",
+    "key_placeholder": "请输入您的 Claude API 密钥",
+    "url_label": "API 基础 URL",
+    "url_placeholder": "留空使用默认 URL",
+    "qr_title": "获取 API 密钥",
+    "qr_description": "扫描下方二维码联系我们获取 API 密钥",
+    "testing": "正在测试 API 连接...",
+    "test_success": "API 连接测试成功",
+    "test_failed": "API 连接测试失败",
+    "invalid_key": "API 密钥格式无效"
+  },
+  "tutorial": {
+    "title": "创建您的第一个 TodoList 应用",
+    "step1": "1. 创建项目目录",
+    "step2": "2. 初始化项目",
+    "step3": "3. 使用 Claude 生成代码",
+    "step4": "4. 运行和测试应用",
+    "success": "恭喜！您已经成功完成了第一个 Claude CLI 项目",
+    "next_steps": "接下来您可以：",
+    "explore": "• 探索更多 Claude CLI 功能",
+    "practice": "• 练习更复杂的项目",
+    "community": "• 加入社区获取帮助"
+  },
+  "errors": {
+    "unknown": "发生未知错误",
+    "network_timeout": "网络请求超时",
+    "permission_denied": "权限不足，请以管理员身份运行",
+    "disk_space": "磁盘空间不足",
+    "download_failed": "文件下载失败",
+    "install_failed": "安装失败",
+    "config_invalid": "配置文件无效",
+    "api_key_invalid": "API 密钥无效",
+    "connection_failed": "连接失败"
+  },
+  "solutions": {
+    "network_timeout": "请检查网络连接或配置代理",
+    "permission_denied": "请右键选择'以管理员身份运行'",
+    "disk_space": "请清理磁盘空间后重试",
+    "download_failed": "请检查网络连接后重试",
+    "install_failed": "请检查系统兼容性或联系技术支持",
+    "config_invalid": "请检查配置文件格式",
+    "api_key_invalid": "请检查 API 密钥是否正确",
+    "connection_failed": "请检查网络连接和 API 配置"
+  },
+  "progress": {
+    "preparing": "准备中...",
+    "downloading": "下载中...",
+    "installing": "安装中...",
+    "configuring": "配置中...",
+    "testing": "测试中...",
+    "completing": "完成中...",
+    "estimated_time": "预计剩余时间",
+    "minutes": "分钟",
+    "seconds": "秒"
+  }
+}

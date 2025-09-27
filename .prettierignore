@@ -1,0 +1,45 @@
+# Build outputs
+build/
+dist/
+coverage/
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+
+# Package files
+package-lock.json
+yarn.lock
+
+# Generated files
+*.d.ts
+
+# Config files that should maintain specific formatting
+.vscode/
+.idea/
+
+# Test outputs
+test-results/
+playwright-report/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Binary files
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.svg
+*.woff
+*.woff2
+*.eot
+*.ttf
+*.otf
+
+# Documentation that may have specific formatting
+CHANGELOG.md

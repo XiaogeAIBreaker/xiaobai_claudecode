@@ -1,0 +1,50 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "useUnknownInCatchVariables": false,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./build",
+    "removeComments": false,
+    "jsx": "react-jsx",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@main/*": ["main/*"],
+      "@renderer/*": ["renderer/*"],
+      "@shared/*": ["shared/*"],
+      "@assets/*": ["../assets/*"],
+      "@config/*": ["../config/*"]
+    },
+    "types": ["node", "jest", "@types/jest"]
+  },
+  "include": [
+    "src/**/*",
+    "tests/**/*",
+    "config/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "build",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ],
+  "ts-node": {
+    "esm": true
+  }
+}

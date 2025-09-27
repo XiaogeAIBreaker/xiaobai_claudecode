@@ -1,0 +1,151 @@
+{
+  "name": "claude-installer",
+  "version": "1.0.0",
+  "description": "Claude Code CLI沉浸式安装程序 - 为中国地区小白用户设计的图形化安装助手",
+  "main": "build/main/main.js",
+  "homepage": "./",
+  "author": {
+    "name": "Claude Installer Team",
+    "email": "support@claude-installer.com"
+  },
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:main\"",
+    "dev:renderer": "webpack serve --config webpack.renderer.config.js",
+    "dev:main": "webpack --config webpack.main.config.js --mode development --watch",
+    "build": "npm run build:renderer && npm run build:main",
+    "build:renderer": "webpack --config webpack.renderer.config.js --mode production",
+    "build:main": "webpack --config webpack.main.config.js --mode production",
+    "build:all": "npm run build && npm run build:electron",
+    "build:electron": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac",
+    "start": "electron build/main/main.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "lint": "eslint src/**/*.{ts,tsx} --fix",
+    "lint:check": "eslint src/**/*.{ts,tsx}",
+    "format": "prettier --write src/**/*.{ts,tsx,css,json}",
+    "format:check": "prettier --check src/**/*.{ts,tsx,css,json}",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf build dist"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.0",
+    "@mui/material": "^5.14.0",
+    "axios": "^1.5.0",
+    "crypto-js": "^4.1.1",
+    "electron-log": "^4.4.8",
+    "electron-store": "^8.1.0",
+    "qrcode": "^1.5.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.15.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.37.0",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/adm-zip": "^0.5.7",
+    "@types/crypto-js": "^4.1.1",
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.5.0",
+    "@types/qrcode": "^1.5.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/tar": "^6.1.13",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "concurrently": "^8.2.0",
+    "css-loader": "^6.8.0",
+    "electron": "^38.1.2",
+    "electron-builder": "^24.6.0",
+    "eslint": "^8.47.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "html-webpack-plugin": "^5.5.0",
+    "jest": "^29.6.0",
+    "jest-environment-jsdom": "^30.1.2",
+    "prettier": "^3.0.0",
+    "rimraf": "^5.0.0",
+    "style-loader": "^3.3.0",
+    "ts-jest": "^29.1.0",
+    "ts-loader": "^9.4.0",
+    "typescript": "^5.1.0",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0",
+    "webpack-dev-server": "^5.2.2"
+  },
+  "build": {
+    "appId": "com.claude-installer.app",
+    "productName": "Claude安装助手",
+    "directories": {
+      "output": "dist",
+      "app": "build"
+    },
+    "files": [
+      "build/**/*",
+      "assets/**/*",
+      "config/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets"
+      },
+      {
+        "from": "config",
+        "to": "config"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icons/app.ico",
+      "requestedExecutionLevel": "requireAdministrator",
+      "artifactName": "Claude安装助手-${version}-Setup.exe"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icons/app.icns",
+      "category": "public.app-category.developer-tools",
+      "artifactName": "Claude安装助手-${version}.dmg"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Claude安装助手"
+    },
+    "dmg": {
+      "title": "Claude安装助手",
+      "backgroundColor": "#ffffff",
+      "window": {
+        "width": 600,
+        "height": 400
+      }
+    }
+  },
+  "keywords": [
+    "claude",
+    "cli",
+    "installer",
+    "electron",
+    "gui",
+    "小白",
+    "中文",
+    "安装助手"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/claude-installer/claude-installer.git"
+  }
+}

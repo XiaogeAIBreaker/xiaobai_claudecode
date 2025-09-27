@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-09-27T09:03:13.608Z",
+  "system": {
+    "platform": "darwin",
+    "arch": "arm64",
+    "cpus": 12,
+    "memory": "36GB",
+    "nodeVersion": "v20.18.1"
+  },
+  "metrics": {
+    "startup": {
+      "average": 655,
+      "min": 458,
+      "max": 1038,
+      "samples": [
+        1038,
+        469,
+        458
+      ],
+      "target": 3000,
+      "passed": true
+    },
+    "memory": {
+      "initial": 4,
+      "afterAlloc": 12,
+      "afterCleanup": 12,
+      "target": 512,
+      "passed": true
+    },
+    "filesystem": {
+      "writeTime": 1,
+      "readTime": 0,
+      "fileSize": 63,
+      "writeSpeed": 63000,
+      "readSpeed": null,
+      "passed": true
+    }
+  },
+  "status": "PASSED",
+  "score": 100,
+  "grade": "A"
+}
