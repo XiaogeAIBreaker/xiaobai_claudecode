@@ -47,7 +47,33 @@
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+**Electron跨平台兼容性检查**:
+- [ ] 功能在Windows和macOS上保持一致
+- [ ] 平台特定功能有降级方案
+- [ ] 两个目标平台均已测试验证
+
+**原生体验要求**:
+- [ ] 遵循各平台UI指南和交互规范
+- [ ] 使用原生菜单、快捷键和文件系统集成
+- [ ] 避免Web应用外观，追求桌面应用体验
+
+**安全性要求**:
+- [ ] 禁用渲染进程Node.js集成
+- [ ] 使用contextIsolation和安全IPC通信
+- [ ] 用户输入验证和清理
+- [ ] 敏感数据加密存储
+
+**性能标准**:
+- [ ] 启动时间≤3秒
+- [ ] 内存占用≤200MB基线
+- [ ] 避免主进程阻塞操作
+- [ ] 实施缓存和懒加载机制
+
+**可维护性要求**:
+- [ ] 主进程和渲染进程逻辑分离
+- [ ] 使用TypeScript类型安全
+- [ ] 完整的测试套件覆盖
+- [ ] 文档与代码同步
 
 ## Project Structure
 

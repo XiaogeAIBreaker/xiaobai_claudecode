@@ -1,50 +1,48 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+Version change: Template → 1.0.0
+Modified principles:
+- Added: I. 跨平台兼容性
+- Added: II. 原生体验优先
+- Added: III. 安全第一
+- Added: IV. 性能优化
+- Added: V. 可维护性
+Added sections:
+- 构建与打包标准
+- 开发流程规范
+Templates requiring updates: ✅ updated
+Follow-up TODOs: None
+-->
+
+# Electron跨平台桌面应用 Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. 跨平台兼容性
+应用必须在Windows和macOS上提供一致的功能和用户体验。所有平台特定的功能必须有相应的降级方案。代码中不得包含未经测试的平台特定逻辑。每个发布版本都必须在两个目标平台上验证通过。
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. 原生体验优先
+界面设计必须遵循各平台的用户界面指南和交互规范。使用原生菜单、快捷键和文件系统集成。避免Web应用的外观和行为，追求真正的桌面应用体验。
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. 安全第一
+禁用Node.js集成在渲染进程中，使用contextIsolation和安全的IPC通信。所有用户输入必须验证和清理。敏感数据必须加密存储。定期更新Electron版本以获取安全补丁。
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. 性能优化
+启动时间必须控制在3秒内。内存占用不得超过200MB基线。避免阻塞主进程的操作。使用适当的缓存策略和懒加载机制。定期进行性能分析和优化。
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. 可维护性
+代码必须模块化，主进程和渲染进程逻辑分离。使用TypeScript增强类型安全。建立完整的单元测试和集成测试套件。文档必须与代码同步更新。
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## 构建与打包标准
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+打包系统必须支持自动化构建流程，生成适用于Windows (.exe, .msi)和macOS (.dmg, .app)的安装包。所有构建产物必须进行代码签名。支持自动更新机制。构建过程必须可重现且版本化。
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## 开发流程规范
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+开发环境必须支持热重载和调试工具。每个功能开发必须包括跨平台测试。Pull Request必须包含对两个平台的影响评估。发布前必须在真实设备上进行端到端测试。
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+Constitution优先于所有其他开发实践。任何修改都需要文档化、审批和迁移计划。所有代码审查必须验证宪法合规性。复杂性增加必须有明确的业务价值支撑。
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2025-09-27 | **Last Amended**: 2025-09-27

@@ -43,52 +43,57 @@
 - Paths shown below assume single project - adjust based on plan.md structure
 
 ## Phase 3.1: Setup
-- [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies
-- [ ] T003 [P] Configure linting and formatting tools
+- [ ] T001 Create Electron项目结构(主进程/渲染进程分离)
+- [ ] T002 Initialize Electron项目并配置TypeScript
+- [ ] T003 [P] Configure ESLint, Prettier和Electron安全最佳实践
+- [ ] T004 [P] Setup跨平台构建配置(Windows/macOS)
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
-- [ ] T004 [P] Contract test POST /api/users in tests/contract/test_users_post.py
-- [ ] T005 [P] Contract test GET /api/users/{id} in tests/contract/test_users_get.py
-- [ ] T006 [P] Integration test user registration in tests/integration/test_registration.py
-- [ ] T007 [P] Integration test auth flow in tests/integration/test_auth.py
+- [ ] T005 [P] 主进程IPC通信测试 in tests/main/test_ipc.spec.ts
+- [ ] T006 [P] 渲染进程安全性测试 in tests/renderer/test_security.spec.ts
+- [ ] T007 [P] 跨平台功能集成测试 in tests/integration/test_platform.spec.ts
+- [ ] T008 [P] 应用启动性能测试 in tests/performance/test_startup.spec.ts
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
-- [ ] T008 [P] User model in src/models/user.py
-- [ ] T009 [P] UserService CRUD in src/services/user_service.py
-- [ ] T010 [P] CLI --create-user in src/cli/user_commands.py
-- [ ] T011 POST /api/users endpoint
-- [ ] T012 GET /api/users/{id} endpoint
-- [ ] T013 Input validation
-- [ ] T014 Error handling and logging
+- [ ] T009 [P] 主进程核心逻辑 in src/main/main.ts
+- [ ] T010 [P] 渲染进程入口 in src/renderer/index.ts
+- [ ] T011 [P] IPC通信处理器 in src/main/ipc-handlers.ts
+- [ ] T012 contextIsolation preload脚本 in src/preload/preload.ts
+- [ ] T013 原生菜单实现 in src/main/menu.ts
+- [ ] T014 用户输入验证和清理 in src/common/validation.ts
+- [ ] T015 错误处理和日志记录 in src/common/logger.ts
 
 ## Phase 3.4: Integration
-- [ ] T015 Connect UserService to DB
-- [ ] T016 Auth middleware
-- [ ] T017 Request/response logging
-- [ ] T018 CORS and security headers
+- [ ] T016 Windows平台特定功能集成
+- [ ] T017 macOS平台特定功能集成
+- [ ] T018 文件系统集成和权限处理
+- [ ] T019 系统通知和托盘图标
+- [ ] T020 自动更新机制配置
 
 ## Phase 3.5: Polish
-- [ ] T019 [P] Unit tests for validation in tests/unit/test_validation.py
-- [ ] T020 Performance tests (<200ms)
-- [ ] T021 [P] Update docs/api.md
-- [ ] T022 Remove duplication
-- [ ] T023 Run manual-testing.md
+- [ ] T021 [P] 单元测试覆盖 in tests/unit/test_validation.spec.ts
+- [ ] T022 性能测试(启动时间≤3秒, 内存≤200MB)
+- [ ] T023 [P] 更新README.md和用户文档
+- [ ] T024 代码重构和去重
+- [ ] T025 跨平台手动测试验证
+- [ ] T026 安全审查和代码签名配置
 
 ## Dependencies
-- Tests (T004-T007) before implementation (T008-T014)
-- T008 blocks T009, T015
-- T016 blocks T018
-- Implementation before polish (T019-T023)
+- Setup (T001-T004) before Tests (T005-T008)
+- Tests (T005-T008) before implementation (T009-T015)
+- Core implementation before integration (T016-T020)
+- Integration before polish (T021-T026)
+- T009主进程 blocks T011 IPC handlers
+- T012 preload blocks 渲染进程安全
 
 ## Parallel Example
 ```
-# Launch T004-T007 together:
-Task: "Contract test POST /api/users in tests/contract/test_users_post.py"
-Task: "Contract test GET /api/users/{id} in tests/contract/test_users_get.py"
-Task: "Integration test registration in tests/integration/test_registration.py"
-Task: "Integration test auth in tests/integration/test_auth.py"
+# Launch T005-T008 together:
+Task: "主进程IPC通信测试 in tests/main/test_ipc.spec.ts"
+Task: "渲染进程安全性测试 in tests/renderer/test_security.spec.ts"
+Task: "跨平台功能集成测试 in tests/integration/test_platform.spec.ts"
+Task: "应用启动性能测试 in tests/performance/test_startup.spec.ts"
 ```
 
 ## Notes
