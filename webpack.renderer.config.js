@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const webpack = require('webpack');
 
 module.exports = (env, argv) => {
   const isDevelopment = argv.mode === 'development';
@@ -62,7 +63,15 @@ module.exports = (env, argv) => {
         inject: 'body',
         minify: !isDevelopment,
       }),
+      new webpack.DefinePlugin({
+        global: 'globalThis',
+      }),
     ],
+    node: {
+      global: true,
+      __filename: false,
+      __dirname: false,
+    },
     devServer: {
       port: 3000,
       hot: true,
