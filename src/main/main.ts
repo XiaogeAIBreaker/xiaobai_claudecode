@@ -1,417 +1,711 @@
 /**
- * T026: 主进程入口和窗口管理
- * Electron主进程，负责窗口管理、应用生命周期和系统集成
+ * Electron主进程入口
+ * 负责应用程序的生命周期管理、窗口创建和安全配置
  */
 
-import { app, BrowserWindow, dialog, shell } from 'electron';
-import * as path from 'path';
-import * as os from 'os';
-import { GlobalUIState, Theme, WindowState, AnimationState, DialogType } from '../shared/types/ui';
-import { InstallerState, InstallStep, InstallerStatus } from '../shared/types/installer';
-import { log } from '../shared/utils/logger';
-import { performanceMonitor } from '../shared/utils/performance';
-import { setupIpcHandlers } from './ipc-handlers';
-import { createApplicationMenu } from './menu';
+import { app, BrowserWindow, dialog, shell, protocol } from 'electron';
+import { join } from 'path';
+import { existsSync } from 'fs';
+import { registerAllHandlers, unregisterAllHandlers } from './ipc-handlers';
+import { initializeNotificationSystem, cleanupNotificationSystem } from './notifications';
 
 /**
- * 应用状态接口
+ * 窗口配置接口
+ */
+interface WindowConfig {
+  width: number;
+  height: number;
+  minWidth: number;
+  minHeight: number;
+  resizable: boolean;
+  maximizable: boolean;
+  minimizable: boolean;
+  closable: boolean;
+  title: string;
+  icon?: string;
+}
+
+/**
+ * 应用程序状态
  */
 interface AppState {
-  mainWindow: BrowserWindow | null;
-  installerState: InstallerState;
-  uiState: GlobalUIState;
   isQuitting: boolean;
+  mainWindow: BrowserWindow | null;
+  splashWindow: BrowserWindow | null;
+  isDevelopment: boolean;
+  isReady: boolean;
 }
 
 /**
- * 全局应用状态
+ * 主应用程序类
  */
-const appState: AppState = {
-  mainWindow: null,
-  installerState: {
-    status: InstallerStatus.INITIALIZING,
-    currentStep: InstallStep.NETWORK_CHECK,
-    steps: {} as any, // 将在初始化时填充
-    overallProgress: 0,
-    allowBackward: true,
-    autoRetry: true,
-    maxRetries: 3,
-    currentRetries: 0
-  },
-  uiState: {
-    ui: {
-      theme: Theme.AUTO,
-      language: 'zh-CN',
-      window: WindowState.NORMAL,
-      windowSize: { width: 900, height: 700 },
-      windowPosition: { x: -1, y: -1 },
-      loading: false,
-      sidebarVisible: true,
-      detailsVisible: false,
-      activePanel: 'installer',
-      animations: { enabled: true, speed: 1, state: AnimationState.IDLE }
-    },
-    wizard: {
-      currentStep: InstallStep.NETWORK_CHECK,
-      stepHistory: [],
-      canGoBack: false,
-      canGoForward: false,
-      navigation: {
-        showStepNumbers: true,
-        showStepTitles: true,
-        highlightCurrent: true,
-        showProgress: true
-      },
-      autoPlay: { enabled: false, delay: 2000, pauseOnError: true }
-    },
-    progress: {
-      overall: 0,
-      current: 0,
-      type: 'linear',
-      showPercentage: true,
-      showSpeed: true,
-      showETA: true,
-      currentOperation: '准备开始安装...'
-    },
-    notifications: {
-      notifications: [],
-      maxVisible: 5,
-      defaultDuration: 5000,
-      soundEnabled: true,
-      desktopNotifications: true
-    },
-    dialog: {
-      visible: false,
-      type: DialogType.INFO,
-      title: '',
-      content: '',
-      modal: true,
-      draggable: false,
-      resizable: false,
-      buttons: []
-    },
-    qrCode: {
-      visible: false,
-      data: '',
-      size: 200,
-      errorCorrectionLevel: 'M',
-      foregroundColor: '#000000',
-      backgroundColor: '#ffffff',
-      includeMargin: true
-    },
-    errors: [],
-    shortcuts: [],
-    accessibility: {
-      screenReader: false,
-      highContrast: false,
-      reducedMotion: false,
-      largeText: false,
-      keyboardNavigation: true,
-      focusIndicator: true,
-      audioFeedback: false
-    },
-    lastUpdated: new Date()
-  },
-  isQuitting: false
-};
+class MainApplication {
+  private state: AppState = {
+    isQuitting: false,
+    mainWindow: null,
+    splashWindow: null,
+    isDevelopment: process.env.NODE_ENV === 'development',
+    isReady: false
+  };
 
-/**
- * 创建主窗口
- */
-function createMainWindow(): BrowserWindow {
-  performanceMonitor.checkpoint('window-creation-start');
-  log.info('创建主窗口');
-
-  const window = new BrowserWindow({
-    width: appState.uiState.ui.windowSize.width,
-    height: appState.uiState.ui.windowSize.height,
+  private readonly defaultWindowConfig: WindowConfig = {
+    width: 1200,
+    height: 800,
     minWidth: 800,
     minHeight: 600,
-    center: true,
-    show: false, // 初始不显示，等待内容加载完成
-    titleBarStyle: 'default',
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: false,
-      preload: path.join(__dirname, '../preload/preload.js'),
-    },
-    icon: getAppIcon()
-  });
+    resizable: true,
+    maximizable: true,
+    minimizable: true,
+    closable: true,
+    title: 'Claude CLI 安装程序'
+  };
 
-  // 窗口事件处理
-  window.once('ready-to-show', () => {
-    performanceMonitor.markWindowCreated();
-    window.show();
-    log.info('主窗口已显示');
+  /**
+   * 初始化应用程序
+   */
+  async initialize(): Promise<void> {
+    console.log('初始化Claude CLI安装程序...');
 
-    // 开发模式下打开开发者工具
-    if (process.env.NODE_ENV === 'development') {
-      window.webContents.openDevTools({ mode: 'detach' });
+    try {
+      // 配置应用程序
+      this.configureApp();
+
+      // 注册协议
+      this.registerProtocols();
+
+      // 注册事件监听器
+      this.registerEventListeners();
+
+      // 初始化通知系统
+      initializeNotificationSystem();
+
+      // 注册IPC处理器
+      registerAllHandlers();
+
+      console.log('应用程序初始化完成');
+
+    } catch (error) {
+      console.error('应用程序初始化失败:', error);
+      throw error;
     }
-  });
-
-  window.on('closed', () => {
-    appState.mainWindow = null;
-    log.info('主窗口已关闭');
-  });
-
-  window.on('resize', () => {
-    const [width, height] = window.getSize();
-    appState.uiState.ui.windowSize = { width, height };
-  });
-
-  window.on('move', () => {
-    const [x, y] = window.getPosition();
-    appState.uiState.ui.windowPosition = { x, y };
-  });
-
-  // 阻止导航到外部链接
-  window.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: 'deny' };
-  });
-
-  // 加载应用
-  if (process.env.NODE_ENV === 'development') {
-    window.loadURL('http://localhost:3000');
-  } else {
-    window.loadFile(path.join(__dirname, '../renderer/index.html'));
   }
 
-  return window;
-}
+  /**
+   * 配置应用程序
+   */
+  private configureApp(): void {
+    // 设置应用程序名称
+    app.setName('Claude CLI Installer');
 
-/**
- * 获取应用图标
- */
-function getAppIcon(): string | undefined {
-  const platform = os.platform();
+    // 配置安全策略
+    app.commandLine.appendSwitch('--disable-features', 'OutOfBlinkCors');
 
-  switch (platform) {
-    case 'win32':
-      return path.join(__dirname, '../../assets/icons/icon.ico');
-    case 'darwin':
-      return path.join(__dirname, '../../assets/icons/icon.icns');
-    case 'linux':
-      return path.join(__dirname, '../../assets/icons/icon.png');
-    default:
-      return undefined;
-  }
-}
-
-/**
- * 初始化应用
- */
-async function initializeApp(): Promise<void> {
-  log.info('初始化应用', {
-    version: app.getVersion(),
-    platform: process.platform,
-    arch: process.arch
-  });
-
-  // 设置应用用户模型ID（Windows）
-  if (process.platform === 'win32') {
-    app.setAppUserModelId('com.claude.installer');
-  }
-
-  // 设置IPC处理器
-  setupIpcHandlers(appState);
-
-  // 创建应用菜单
-  createApplicationMenu();
-
-  // 安全设置
-  app.on('web-contents-created', (_, contents) => {
-    contents.setWindowOpenHandler(({ url }) => {
-      shell.openExternal(url);
-      return { action: 'deny' };
-    });
-  });
-}
-
-/**
- * 处理应用关闭前的清理工作
- */
-async function handleAppBeforeQuit(): Promise<void> {
-  if (appState.isQuitting) {
-    return;
-  }
-
-  appState.isQuitting = true;
-  log.info('应用准备退出');
-
-  // 如果安装正在进行中，询问用户是否确认退出
-  if (appState.installerState.status !== 'completed' && appState.installerState.status !== 'failed') {
-    const choice = await dialog.showMessageBox(appState.mainWindow!, {
-      type: 'question',
-      buttons: ['继续安装', '退出应用'],
-      defaultId: 0,
-      title: '确认退出',
-      message: '安装程序正在运行，确定要退出吗？',
-      detail: '退出可能会导致安装失败或系统状态不一致。'
-    });
-
-    if (choice.response === 0) {
-      appState.isQuitting = false;
+    // 防止多实例运行
+    const gotTheLock = app.requestSingleInstanceLock();
+    if (!gotTheLock) {
+      console.log('应用程序已在运行，退出当前实例');
+      app.quit();
       return;
     }
+
+    // 处理第二个实例尝试启动
+    app.on('second-instance', () => {
+      if (this.state.mainWindow) {
+        if (this.state.mainWindow.isMinimized()) {
+          this.state.mainWindow.restore();
+        }
+        this.state.mainWindow.focus();
+      }
+    });
+
+    // macOS特定配置
+    if (process.platform === 'darwin') {
+      app.setAboutPanelOptions({
+        applicationName: 'Claude CLI Installer',
+        applicationVersion: app.getVersion(),
+        copyright: '© 2024 Anthropic',
+        website: 'https://claude.ai'
+      });
+    }
   }
 
-  // 执行清理工作
-  try {
-    // 保存当前状态
-    // 清理临时文件
-    // 关闭日志系统
-    log.info('应用清理完成');
-  } catch (error) {
-    log.error('应用清理时发生错误', error as Error);
+  /**
+   * 注册自定义协议
+   */
+  private registerProtocols(): void {
+    // 注册文件协议
+    protocol.registerSchemesAsPrivileged([
+      {
+        scheme: 'app',
+        privileges: {
+          standard: true,
+          secure: true,
+          supportFetchAPI: true,
+          corsEnabled: true
+        }
+      }
+    ]);
+  }
+
+  /**
+   * 注册事件监听器
+   */
+  private registerEventListeners(): void {
+    // 应用程序准备就绪
+    app.whenReady().then(async () => {
+      console.log('Electron应用程序准备就绪');
+      this.state.isReady = true;
+
+      // 创建启动画面
+      await this.createSplashWindow();
+
+      // 延迟创建主窗口
+      setTimeout(async () => {
+        await this.createMainWindow();
+        this.closeSplashWindow();
+      }, 2000);
+    });
+
+    // 所有窗口关闭
+    app.on('window-all-closed', () => {
+      console.log('所有窗口已关闭');
+
+      // macOS上不立即退出应用
+      if (process.platform !== 'darwin') {
+        this.quit();
+      }
+    });
+
+    // 应用程序激活（macOS）
+    app.on('activate', async () => {
+      if (this.state.mainWindow === null && this.state.isReady) {
+        await this.createMainWindow();
+      }
+    });
+
+    // 应用程序退出前
+    app.on('before-quit', (event) => {
+      console.log('应用程序准备退出');
+      this.state.isQuitting = true;
+
+      // 执行清理工作
+      this.performCleanup();
+    });
+
+    // Web内容安全检查
+    app.on('web-contents-created', (_, contents) => {
+      // 阻止导航到外部网站
+      contents.on('will-navigate', (event, navigationUrl) => {
+        const parsedUrl = new URL(navigationUrl);
+
+        if (parsedUrl.origin !== 'http://localhost:3000' &&
+            parsedUrl.origin !== 'file://') {
+          console.warn('阻止导航到外部URL:', navigationUrl);
+          event.preventDefault();
+        }
+      });
+
+      // 阻止打开新窗口
+      contents.setWindowOpenHandler(({ url }) => {
+        console.log('拦截窗口打开请求:', url);
+        shell.openExternal(url);
+        return { action: 'deny' };
+      });
+    });
+
+    // 证书错误处理
+    app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
+      if (this.state.isDevelopment) {
+        // 开发环境忽略证书错误
+        event.preventDefault();
+        callback(true);
+      } else {
+        callback(false);
+      }
+    });
+  }
+
+  /**
+   * 创建启动画面
+   */
+  private async createSplashWindow(): Promise<void> {
+    console.log('创建启动画面');
+
+    try {
+      this.state.splashWindow = new BrowserWindow({
+        width: 400,
+        height: 300,
+        frame: false,
+        alwaysOnTop: true,
+        transparent: true,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: true
+        },
+        show: false
+      });
+
+      // 加载启动画面内容
+      const splashHtml = this.createSplashHTML();
+      await this.state.splashWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(splashHtml)}`);
+
+      // 显示启动画面
+      this.state.splashWindow.show();
+
+      console.log('启动画面创建完成');
+
+    } catch (error) {
+      console.error('创建启动画面失败:', error);
+    }
+  }
+
+  /**
+   * 创建主窗口
+   */
+  private async createMainWindow(): Promise<void> {
+    console.log('创建主窗口');
+
+    try {
+      const config = this.getWindowConfig();
+
+      this.state.mainWindow = new BrowserWindow({
+        ...config,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+          sandbox: true,
+          preload: join(__dirname, '../preload/preload.js'),
+          webSecurity: !this.state.isDevelopment
+        },
+        show: false // 延迟显示，等内容加载完成
+      });
+
+      // 设置窗口图标
+      if (config.icon && existsSync(config.icon)) {
+        this.state.mainWindow.setIcon(config.icon);
+      }
+
+      // 加载应用内容
+      await this.loadMainContent();
+
+      // 配置窗口事件
+      this.setupWindowEvents();
+
+      // 显示窗口
+      this.state.mainWindow.show();
+
+      // 开发环境打开开发者工具
+      if (this.state.isDevelopment) {
+        this.state.mainWindow.webContents.openDevTools();
+      }
+
+      console.log('主窗口创建完成');
+
+    } catch (error) {
+      console.error('创建主窗口失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 获取窗口配置
+   */
+  private getWindowConfig(): WindowConfig {
+    // 可以从配置文件或环境变量读取自定义配置
+    const config = { ...this.defaultWindowConfig };
+
+    // 根据屏幕尺寸调整窗口大小
+    const { screen } = require('electron');
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+
+    if (screenWidth < config.width) {
+      config.width = Math.floor(screenWidth * 0.9);
+    }
+
+    if (screenHeight < config.height) {
+      config.height = Math.floor(screenHeight * 0.9);
+    }
+
+    return config;
+  }
+
+  /**
+   * 加载主应用内容
+   */
+  private async loadMainContent(): Promise<void> {
+    if (!this.state.mainWindow) return;
+
+    try {
+      if (this.state.isDevelopment) {
+        // 开发环境加载开发服务器
+        await this.state.mainWindow.loadURL('http://localhost:3000');
+      } else {
+        // 生产环境加载打包后的文件
+        const indexPath = join(__dirname, '../renderer/index.html');
+
+        if (existsSync(indexPath)) {
+          await this.state.mainWindow.loadFile(indexPath);
+        } else {
+          // 尝试从src目录加载（开发期间）
+          const srcIndexPath = join(__dirname, '../../src/renderer/index.html');
+          if (existsSync(srcIndexPath)) {
+            await this.state.mainWindow.loadFile(srcIndexPath);
+          } else {
+            // 如果没有文件，加载基础HTML
+            const basicHtml = this.createBasicHTML();
+            await this.state.mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(basicHtml)}`);
+          }
+        }
+      }
+
+      console.log('主应用内容加载完成');
+
+    } catch (error) {
+      console.error('加载主应用内容失败:', error);
+
+      // 加载错误页面
+      const errorHtml = this.createErrorHTML(error);
+      await this.state.mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(errorHtml)}`);
+    }
+  }
+
+  /**
+   * 设置窗口事件
+   */
+  private setupWindowEvents(): void {
+    if (!this.state.mainWindow) return;
+
+    // 窗口关闭事件
+    this.state.mainWindow.on('close', (event) => {
+      if (!this.state.isQuitting) {
+        console.log('主窗口关闭');
+
+        // macOS上隐藏窗口而不是关闭
+        if (process.platform === 'darwin') {
+          event.preventDefault();
+          this.state.mainWindow?.hide();
+        }
+      }
+    });
+
+    // 窗口关闭后
+    this.state.mainWindow.on('closed', () => {
+      console.log('主窗口已销毁');
+      this.state.mainWindow = null;
+    });
+
+    // 页面加载完成
+    this.state.mainWindow.webContents.on('did-finish-load', () => {
+      console.log('页面加载完成');
+
+      // 注入初始化脚本
+      this.injectInitializationScript();
+    });
+
+    // 页面加载失败
+    this.state.mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+      console.error('页面加载失败:', errorCode, errorDescription);
+    });
+
+    // 控制台消息
+    this.state.mainWindow.webContents.on('console-message', (event, level, message) => {
+      if (this.state.isDevelopment) {
+        console.log(`[Renderer ${level}]:`, message);
+      }
+    });
+  }
+
+  /**
+   * 注入初始化脚本
+   */
+  private injectInitializationScript(): void {
+    if (!this.state.mainWindow) return;
+
+    const initScript = `
+      // 应用程序初始化
+      console.log('Claude CLI Installer 已加载');
+
+      // 设置全局错误处理
+      window.addEventListener('error', (event) => {
+        console.error('全局错误:', event.error);
+      });
+
+      // 设置未捕获的Promise拒绝处理
+      window.addEventListener('unhandledrejection', (event) => {
+        console.error('未处理的Promise拒绝:', event.reason);
+      });
+    `;
+
+    this.state.mainWindow.webContents.executeJavaScript(initScript).catch(error => {
+      console.error('注入初始化脚本失败:', error);
+    });
+  }
+
+  /**
+   * 关闭启动画面
+   */
+  private closeSplashWindow(): void {
+    if (this.state.splashWindow) {
+      console.log('关闭启动画面');
+      this.state.splashWindow.close();
+      this.state.splashWindow = null;
+    }
+  }
+
+  /**
+   * 创建启动画面HTML
+   */
+  private createSplashHTML(): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Claude CLI Installer</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              display: flex;
+              flex-direction: column;
+              justify-content: center;
+              align-items: center;
+              height: 100vh;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+              color: white;
+            }
+            .logo {
+              font-size: 32px;
+              font-weight: bold;
+              margin-bottom: 20px;
+            }
+            .spinner {
+              width: 40px;
+              height: 40px;
+              border: 4px solid rgba(255,255,255,0.3);
+              border-radius: 50%;
+              border-top-color: white;
+              animation: spin 1s ease-in-out infinite;
+            }
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+            .message {
+              margin-top: 20px;
+              font-size: 14px;
+              opacity: 0.8;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="logo">Claude CLI</div>
+          <div class="spinner"></div>
+          <div class="message">正在启动安装程序...</div>
+        </body>
+      </html>
+    `;
+  }
+
+  /**
+   * 创建基础HTML页面
+   */
+  private createBasicHTML(): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Claude CLI 安装程序</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+              background: #f5f5f5;
+            }
+            .container {
+              max-width: 800px;
+              margin: 0 auto;
+              background: white;
+              padding: 40px;
+              border-radius: 8px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            h1 {
+              color: #333;
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            .message {
+              text-align: center;
+              color: #666;
+              font-size: 16px;
+              line-height: 1.5;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Claude CLI 安装程序</h1>
+            <div class="message">
+              <p>欢迎使用Claude CLI安装程序</p>
+              <p>程序正在加载中，请稍候...</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
+  /**
+   * 创建错误页面HTML
+   */
+  private createErrorHTML(error: any): string {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>加载错误 - Claude CLI 安装程序</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+              background: #f5f5f5;
+            }
+            .container {
+              max-width: 800px;
+              margin: 0 auto;
+              background: white;
+              padding: 40px;
+              border-radius: 8px;
+              box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            h1 {
+              color: #d73a49;
+              text-align: center;
+              margin-bottom: 30px;
+            }
+            .error {
+              background: #ffeef0;
+              border: 1px solid #fdaeb7;
+              padding: 20px;
+              border-radius: 6px;
+              color: #86181d;
+              font-family: monospace;
+              white-space: pre-wrap;
+            }
+            .actions {
+              text-align: center;
+              margin-top: 30px;
+            }
+            button {
+              background: #0366d6;
+              color: white;
+              border: none;
+              padding: 10px 20px;
+              border-radius: 6px;
+              cursor: pointer;
+              font-size: 14px;
+            }
+            button:hover {
+              background: #0256cc;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>应用程序加载失败</h1>
+            <div class="error">${errorMessage}</div>
+            <div class="actions">
+              <button onclick="location.reload()">重新加载</button>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
+  /**
+   * 执行清理工作
+   */
+  private performCleanup(): void {
+    console.log('执行应用程序清理工作');
+
+    try {
+      // 清理通知系统
+      cleanupNotificationSystem();
+
+      // 注销IPC处理器
+      unregisterAllHandlers();
+
+      // 清理临时文件
+      // 这里可以添加具体的清理逻辑
+
+      console.log('清理工作完成');
+
+    } catch (error) {
+      console.error('清理工作失败:', error);
+    }
+  }
+
+  /**
+   * 退出应用程序
+   */
+  quit(): void {
+    console.log('退出应用程序');
+    this.state.isQuitting = true;
+    app.quit();
+  }
+
+  /**
+   * 获取主窗口
+   */
+  getMainWindow(): BrowserWindow | null {
+    return this.state.mainWindow;
+  }
+
+  /**
+   * 获取应用状态
+   */
+  getState(): Readonly<AppState> {
+    return { ...this.state };
   }
 }
 
-// Electron应用事件处理
+/**
+ * 全局应用实例
+ */
+const mainApplication = new MainApplication();
 
 /**
- * 当Electron完成初始化时触发
+ * 启动应用程序
  */
-app.whenReady().then(async () => {
-  performanceMonitor.checkpoint('app-start');
-  log.info('Electron应用已准备就绪');
-
+async function startApplication(): Promise<void> {
   try {
-    // 初始化应用
-    await initializeApp();
-
-    // 创建主窗口
-    appState.mainWindow = createMainWindow();
-
-    // 标记启动完成
-    performanceMonitor.markStartupComplete();
-    log.info('应用初始化完成', {
-      performance: performanceMonitor.generateReport()
-    });
+    await mainApplication.initialize();
+    console.log('Claude CLI安装程序启动成功');
   } catch (error) {
-    log.error('应用初始化失败', error as Error);
-
-    // 显示错误对话框
-    dialog.showErrorBox(
-      '初始化失败',
-      `应用初始化时发生错误：${error instanceof Error ? error.message : '未知错误'}`
-    );
-
-    app.quit();
+    console.error('应用程序启动失败:', error);
+    process.exit(1);
   }
-});
+}
+
+// 如果是主模块，直接启动应用
+if (require.main === module) {
+  startApplication();
+}
 
 /**
- * 当所有窗口都被关闭时触发
+ * 导出应用实例和工具函数
  */
-app.on('window-all-closed', () => {
-  log.info('所有窗口已关闭');
-
-  // macOS上，应用通常保持活动状态直到用户明确退出
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-/**
- * 当应用被激活时触发（macOS）
- */
-app.on('activate', () => {
-  log.info('应用被激活');
-
-  // macOS上，当dock图标被点击且没有其他窗口打开时，
-  // 重新创建窗口
-  if (BrowserWindow.getAllWindows().length === 0) {
-    appState.mainWindow = createMainWindow();
-  }
-});
-
-/**
- * 当应用即将退出时触发
- */
-app.on('before-quit', async (event) => {
-  if (!appState.isQuitting) {
-    event.preventDefault();
-    await handleAppBeforeQuit();
-
-    if (appState.isQuitting) {
-      app.quit();
-    }
-  }
-});
-
-/**
- * 当应用即将关闭时触发
- */
-app.on('will-quit', (event) => {
-  log.info('应用即将退出');
-});
-
-/**
- * 当应用完全关闭时触发
- */
-app.on('quit', () => {
-  log.info('应用已退出');
-});
-
-/**
- * 处理未捕获的异常
- */
-process.on('uncaughtException', (error) => {
-  log.error('未捕获的异常', error);
-
-  // 显示错误对话框
-  if (appState.mainWindow) {
-    dialog.showErrorBox(
-      '程序错误',
-      `发生了未预期的错误：${error.message}\n\n请重启应用程序。`
-    );
-  }
-
-  // 优雅地退出应用
-  app.quit();
-});
-
-/**
- * 处理未处理的Promise拒绝
- */
-process.on('unhandledRejection', (reason, promise) => {
-  log.error('未处理的Promise拒绝', { reason, promise });
-
-  // 在开发模式下，可以选择不退出应用
-  if (process.env.NODE_ENV !== 'development') {
-    if (appState.mainWindow) {
-      dialog.showErrorBox(
-        '程序错误',
-        `发生了未预期的错误：${reason}\n\n请重启应用程序。`
-      );
-    }
-    app.quit();
-  }
-});
-
-// 安全设置：防止新窗口打开
-app.on('web-contents-created', (_, contents) => {
-  contents.setWindowOpenHandler(({ url }) => {
-    log.warn('阻止打开新窗口', { url });
-    return { action: 'deny' };
-  });
-
-  contents.on('will-navigate', (event, navigationUrl) => {
-    const parsedUrl = new URL(navigationUrl);
-
-    // 只允许本地开发服务器和file协议
-    if (
-      parsedUrl.origin !== 'http://localhost:3000' &&
-      parsedUrl.protocol !== 'file:'
-    ) {
-      event.preventDefault();
-      log.warn('阻止导航到外部URL', { url: navigationUrl });
-    }
-  });
-});
-
-// 导出状态访问器（用于测试和调试）
-export { appState };
+export { mainApplication, startApplication };
+export type { WindowConfig, AppState };

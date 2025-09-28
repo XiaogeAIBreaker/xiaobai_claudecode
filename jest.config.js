@@ -11,7 +11,9 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testMatch: [
     '<rootDir>/tests/**/*.test.{ts,tsx}',
+    '<rootDir>/tests/**/*.spec.{ts,tsx}',
     '<rootDir>/src/**/*.test.{ts,tsx}',
+    '<rootDir>/src/**/*.spec.{ts,tsx}',
   ],
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',

@@ -27,6 +27,11 @@
       "@main/*": ["main/*"],
       "@renderer/*": ["renderer/*"],
       "@shared/*": ["shared/*"],
+      "@installer/*": ["installer/*"],
+      "@models/*": ["models/*"],
+      "@services/*": ["services/*"],
+      "@utils/*": ["utils/*"],
+      "@platform/*": ["platform/*"],
       "@assets/*": ["../assets/*"],
       "@config/*": ["../config/*"]
     },

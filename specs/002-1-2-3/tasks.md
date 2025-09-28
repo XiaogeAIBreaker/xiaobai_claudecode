@@ -42,30 +42,30 @@
 - 基于plan.md中的Electron桌面应用结构
 
 ## Phase 3.1: Setup (项目初始化)
-- [ ] T001 创建Electron项目结构，配置主进程/渲染进程分离架构 in src/main/, src/renderer/, src/preload/
-- [ ] T002 初始化TypeScript配置和Electron安全最佳实践 in tsconfig.json, electron.config.js
-- [ ] T003 [P] 配置ESLint, Prettier和构建工具 in .eslintrc.js, .prettierrc, webpack.config.js
-- [ ] T004 [P] 设置跨平台构建配置(Windows/macOS) in electron-builder.config.js, package.json
-- [ ] T005 [P] 安装和配置项目依赖 in package.json (Electron, Commander.js, Inquirer.js, Axios, Chalk)
+- [x] T001 创建Electron项目结构，配置主进程/渲染进程分离架构 in src/main/, src/renderer/, src/preload/
+- [x] T002 初始化TypeScript配置和Electron安全最佳实践 in tsconfig.json, electron.config.js
+- [x] T003 [P] 配置ESLint, Prettier和构建工具 in .eslintrc.js, .prettierrc, webpack.config.js
+- [x] T004 [P] 设置跨平台构建配置(Windows/macOS) in electron-builder.config.js, package.json
+- [x] T005 [P] 安装和配置项目依赖 in package.json (Electron, Commander.js, Inquirer.js, Axios, Chalk)
 
 ## Phase 3.2: Tests First (TDD) ⚠️ 必须在实现前完成
 **关键：这些测试必须编写并且必须失败，然后才能开始任何实现**
 
 ### 合约测试 (基于 contracts/installer-api.md)
-- [ ] T006 [P] Navigation API IPC通信测试 in tests/ipc/navigation.spec.ts
-- [ ] T007 [P] Step Execution API测试 in tests/ipc/step-execution.spec.ts
-- [ ] T008 [P] Detection API测试 in tests/ipc/detection.spec.ts
-- [ ] T009 [P] Network API测试 in tests/ipc/network.spec.ts
-- [ ] T010 [P] Node.js API测试 in tests/ipc/nodejs.spec.ts
-- [ ] T011 [P] Claude CLI API测试 in tests/ipc/claude-cli.spec.ts
-- [ ] T012 [P] Configuration API测试 in tests/ipc/configuration.spec.ts
+- [x] T006 [P] Navigation API IPC通信测试 in tests/ipc/navigation.spec.ts
+- [x] T007 [P] Step Execution API测试 in tests/ipc/step-execution.spec.ts
+- [x] T008 [P] Detection API测试 in tests/ipc/detection.spec.ts
+- [x] T009 [P] Network API测试 in tests/ipc/network.spec.ts
+- [x] T010 [P] Node.js API测试 in tests/ipc/nodejs.spec.ts
+- [x] T011 [P] Claude CLI API测试 in tests/ipc/claude-cli.spec.ts
+- [x] T012 [P] Configuration API测试 in tests/ipc/configuration.spec.ts
 
 ### 数据模型测试 (基于 data-model.md)
-- [ ] T013 [P] InstallationStep实体验证测试 in tests/models/installation-step.spec.ts
-- [ ] T014 [P] DetectionResult实体验证测试 in tests/models/detection-result.spec.ts
-- [ ] T015 [P] UserConfiguration实体验证测试 in tests/models/user-configuration.spec.ts
-- [ ] T016 [P] NavigationState实体验证测试 in tests/models/navigation-state.spec.ts
-- [ ] T017 [P] NetworkConfiguration实体验证测试 in tests/models/network-configuration.spec.ts
+- [x] T013 [P] InstallationStep实体验证测试 in tests/models/installation-step.spec.ts
+- [x] T014 [P] DetectionResult实体验证测试 in tests/models/detection-result.spec.ts
+- [x] T015 [P] UserConfiguration实体验证测试 in tests/models/user-configuration.spec.ts
+- [x] T016 [P] NavigationState实体验证测试 in tests/models/navigation-state.spec.ts
+- [x] T017 [P] NetworkConfiguration实体验证测试 in tests/models/network-configuration.spec.ts
 
 ### 集成测试 (基于 quickstart.md验证清单)
 - [ ] T018 [P] 通用导航优化集成测试 in tests/integration/navigation.spec.ts
@@ -82,62 +82,62 @@
 ## Phase 3.3: Core Implementation (仅在测试失败后)
 
 ### 数据模型实现
-- [ ] T026 [P] InstallationStep TypeScript接口和验证 in src/models/installation-step.ts
-- [ ] T027 [P] DetectionResult TypeScript接口和验证 in src/models/detection-result.ts
-- [ ] T028 [P] UserConfiguration TypeScript接口和验证 in src/models/user-configuration.ts
-- [ ] T029 [P] NavigationState TypeScript接口和验证 in src/models/navigation-state.ts
-- [ ] T030 [P] NetworkConfiguration TypeScript接口和验证 in src/models/network-configuration.ts
+- [x] T026 [P] InstallationStep TypeScript接口和验证 in src/models/installation-step.ts
+- [x] T027 [P] DetectionResult TypeScript接口和验证 in src/models/detection-result.ts
+- [x] T028 [P] UserConfiguration TypeScript接口和验证 in src/models/user-configuration.ts
+- [x] T029 [P] NavigationState TypeScript接口和验证 in src/models/navigation-state.ts
+- [x] T030 [P] NetworkConfiguration TypeScript接口和验证 in src/models/network-configuration.ts
 
 ### IPC通信框架
-- [ ] T031 主进程IPC处理器基础框架 in src/main/ipc-handlers.ts
-- [ ] T032 渲染进程安全的preload脚本 in src/preload/preload.ts
-- [ ] T033 Navigation API IPC实现 in src/main/ipc/navigation-handler.ts
-- [ ] T034 [P] Step Execution API IPC实现 in src/main/ipc/step-handler.ts
-- [ ] T035 [P] Detection API IPC实现 in src/main/ipc/detection-handler.ts
-- [ ] T036 [P] Network API IPC实现 in src/main/ipc/network-handler.ts
-- [ ] T037 [P] Node.js API IPC实现 in src/main/ipc/nodejs-handler.ts
-- [ ] T038 [P] Claude CLI API IPC实现 in src/main/ipc/claude-cli-handler.ts
-- [ ] T039 [P] Configuration API IPC实现 in src/main/ipc/config-handler.ts
+- [x] T031 主进程IPC处理器基础框架 in src/main/ipc-handlers.ts
+- [x] T032 渲染进程安全的preload脚本 in src/preload/preload.ts
+- [x] T033 Navigation API IPC实现 in src/main/ipc/navigation-handler.ts
+- [x] T034 [P] Step Execution API IPC实现 in src/main/ipc/step-handler.ts
+- [x] T035 [P] Detection API IPC实现 in src/main/ipc/detection-handler.ts
+- [x] T036 [P] Network API IPC实现 in src/main/ipc/network-handler.ts
+- [x] T037 [P] Node.js API IPC实现 in src/main/ipc/nodejs-handler.ts
+- [x] T038 [P] Claude CLI API IPC实现 in src/main/ipc/claude-cli-handler.ts
+- [x] T039 [P] Configuration API IPC实现 in src/main/ipc/config-handler.ts
 
 ### 核心服务实现
-- [ ] T040 [P] 网络检测服务（移除代理设置，优化检测流程） in src/services/network-service.ts
-- [ ] T041 [P] Node.js管理服务（镜像源自动配置） in src/services/nodejs-service.ts
-- [ ] T042 [P] Claude CLI检测和安装服务 in src/services/claude-cli-service.ts
-- [ ] T043 [P] 配置管理服务（环境变量安全存储） in src/services/config-service.ts
-- [ ] T044 [P] 安装步骤管理服务 in src/services/step-service.ts
+- [x] T040 [P] 网络检测服务（移除代理设置，优化检测流程） in src/services/network-service.ts
+- [x] T041 [P] Node.js管理服务（镜像源自动配置） in src/services/nodejs-service.ts
+- [x] T042 [P] Claude CLI检测和安装服务 in src/services/claude-cli-service.ts
+- [x] T043 [P] 配置管理服务（环境变量安全存储） in src/services/config-service.ts
+- [x] T044 [P] 安装步骤管理服务 in src/services/step-service.ts
 
 ## Phase 3.4: UI Implementation (用户界面)
 
 ### 主进程UI
-- [ ] T045 Electron主进程入口和窗口管理 in src/main/main.ts
-- [ ] T046 原生菜单和快捷键实现 in src/main/menu.ts
-- [ ] T047 系统通知和错误处理 in src/main/notifications.ts
+- [x] T045 Electron主进程入口和窗口管理 in src/main/main.ts
+- [x] T046 原生菜单和快捷键实现 in src/main/menu.ts
+- [x] T047 系统通知和错误处理 in src/main/notifications.ts
 
 ### 渲染进程UI组件
-- [ ] T048 渲染进程入口和路由(⚠️阻塞所有UI组件) in src/renderer/index.ts, src/renderer/router.ts
-- [ ] T049 [P] 统一导航组件（移除重复的"继续安装"按钮） in src/renderer/components/navigation.ts
-- [ ] T050 [P] 网络检查步骤组件（简化界面） in src/renderer/components/network-check.ts
-- [ ] T051 [P] Node.js安装步骤组件 in src/renderer/components/nodejs-install.ts
-- [ ] T052 [P] Google设置步骤组件（重构为邮箱登录引导） in src/renderer/components/google-setup.ts
-- [ ] T053 [P] Claude CLI安装步骤组件 in src/renderer/components/claude-cli-install.ts
-- [ ] T054 [P] API配置步骤组件（可选配置） in src/renderer/components/api-config.ts
-- [ ] T055 [P] 进度指示器和状态显示组件 in src/renderer/components/progress.ts
-- [ ] T056 [P] 错误处理和用户反馈组件 in src/renderer/components/error-handler.ts
+- [x] T048 渲染进程入口和路由(⚠️阻塞所有UI组件) in src/renderer/index.ts, src/renderer/router.ts
+- [x] T049 [P] 统一导航组件（移除重复的"继续安装"按钮） in src/renderer/components/navigation.ts
+- [x] T050 [P] 网络检查步骤组件（简化界面） in src/renderer/components/network-check.ts
+- [x] T051 [P] Node.js安装步骤组件 in src/renderer/components/nodejs-install.ts
+- [x] T052 [P] Google设置步骤组件（重构为邮箱登录引导） in src/renderer/components/google-setup.ts
+- [x] T053 [P] Claude CLI安装步骤组件 in src/renderer/components/claude-cli-install.ts
+- [x] T054 [P] API配置步骤组件（可选配置） in src/renderer/components/api-config.ts
+- [x] T055 [P] 进度指示器和状态显示组件 in src/renderer/components/progress.ts
+- [x] T056 [P] 错误处理和用户反馈组件 in src/renderer/components/error-handler.ts
 
 ## Phase 3.5: Integration (集成功能)
-- [ ] T057 Windows平台特定功能集成（路径处理、权限） in src/platform/windows.ts
-- [ ] T058 macOS平台特定功能集成（权限、文件系统） in src/platform/macos.ts
-- [ ] T059 跨平台文件系统和配置存储 in src/utils/file-system.ts
-- [ ] T060 日志记录和错误追踪系统 in src/utils/logger.ts
-- [ ] T061 加密存储和安全处理工具 in src/utils/security.ts
+- [X] T057 Windows平台特定功能集成（路径处理、权限） in src/platform/windows.ts
+- [X] T058 macOS平台特定功能集成（权限、文件系统） in src/platform/macos.ts
+- [X] T059 跨平台文件系统和配置存储 in src/utils/file-system.ts
+- [X] T060 日志记录和错误追踪系统 in src/utils/logger.ts
+- [X] T061 加密存储和安全处理工具 in src/utils/security.ts
 
 ## Phase 3.6: Polish (完善优化)
-- [ ] T062 [P] 补充单元测试覆盖（目标90%+） in tests/unit/各个模块
-- [ ] T063 性能优化和内存泄漏检查 in src/utils/performance.ts
-- [ ] T064 [P] 更新README.md和用户文档 in README.md, docs/
-- [ ] T065 代码重构和去重优化 (全项目范围)
-- [ ] T066 跨平台手动测试验证 (Windows + macOS)
-- [ ] T067 安全审查和代码签名配置 in build/scripts/
+- [X] T062 [P] 补充单元测试覆盖（目标90%+） in tests/unit/各个模块
+- [X] T063 性能优化和内存泄漏检查 in src/utils/performance.ts
+- [X] T064 [P] 更新README.md和用户文档 in README.md, docs/
+- [X] T065 代码重构和去重优化 (全项目范围)
+- [X] T066 跨平台手动测试验证 (Windows + macOS)
+- [X] T067 安全审查和代码签名配置 in build/scripts/
 
 ## Dependencies (依赖关系)
 ```

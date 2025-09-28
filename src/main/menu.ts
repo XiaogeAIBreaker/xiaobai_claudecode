@@ -1,10 +1,11 @@
 /**
- * T028: 应用菜单模块
- * 创建跨平台应用菜单，提供完整的菜单功能和快捷键支持
+ * 原生菜单和快捷键实现
+ * 提供应用程序菜单、快捷键绑定和系统集成
  */
 
-import { Menu, MenuItem, app, dialog, shell, BrowserWindow } from 'electron';
-import { log } from '../shared/utils/logger';
+import { app, Menu, MenuItem, shell, dialog, BrowserWindow, MenuItemConstructorOptions } from 'electron';
+import { mainApplication } from './main';
+import { errorHandler } from './notifications';
 
 /**
  * 菜单模板接口
@@ -41,7 +42,7 @@ export class ApplicationMenu {
     // 设置应用菜单
     Menu.setApplicationMenu(this.menu);
 
-    log.info('应用菜单创建完成');
+    console.log('应用菜单创建完成');
   }
 
   /**
@@ -404,7 +405,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:open-settings');
     }
-    log.info('打开设置页面');
+    console.log('打开设置页面');
   }
 
   /**
@@ -415,7 +416,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:new-configuration');
     }
-    log.info('新建配置');
+    console.log('新建配置');
   }
 
   /**
@@ -426,7 +427,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:open-configuration');
     }
-    log.info('打开配置');
+    console.log('打开配置');
   }
 
   /**
@@ -437,7 +438,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:save-configuration');
     }
-    log.info('保存配置');
+    console.log('保存配置');
   }
 
   /**
@@ -448,7 +449,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:save-configuration-as');
     }
-    log.info('另存为配置');
+    console.log('另存为配置');
   }
 
   /**
@@ -459,7 +460,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:import-configuration');
     }
-    log.info('导入配置');
+    console.log('导入配置');
   }
 
   /**
@@ -470,7 +471,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:export-configuration');
     }
-    log.info('导出配置');
+    console.log('导出配置');
   }
 
   /**
@@ -481,7 +482,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:start-installation');
     }
-    log.info('开始安装');
+    console.log('开始安装');
   }
 
   /**
@@ -502,7 +503,7 @@ export class ApplicationMenu {
 
     if (choice.response === 1) {
       focusedWindow?.webContents.send('menu:restart-installation');
-      log.info('重新开始安装');
+      console.log('重新开始安装');
     }
   }
 
@@ -514,7 +515,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:check-environment');
     }
-    log.info('检查环境');
+    console.log('检查环境');
   }
 
   /**
@@ -525,7 +526,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:test-connection');
     }
-    log.info('测试连接');
+    console.log('测试连接');
   }
 
   /**
@@ -546,7 +547,7 @@ export class ApplicationMenu {
 
     if (choice.response === 1) {
       focusedWindow?.webContents.send('menu:stop-installation');
-      log.info('停止安装');
+      console.log('停止安装');
     }
   }
 
@@ -558,7 +559,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:show-system-info');
     }
-    log.info('显示系统信息');
+    console.log('显示系统信息');
   }
 
   /**
@@ -569,7 +570,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:run-network-diagnostics');
     }
-    log.info('运行网络诊断');
+    console.log('运行网络诊断');
   }
 
   /**
@@ -590,7 +591,7 @@ export class ApplicationMenu {
 
     if (choice.response === 1) {
       focusedWindow?.webContents.send('menu:clear-cache');
-      log.info('清除缓存');
+      console.log('清除缓存');
     }
   }
 
@@ -601,9 +602,9 @@ export class ApplicationMenu {
     try {
       const logPath = app.getPath('logs');
       await shell.openPath(logPath);
-      log.info('打开日志文件夹', { path: logPath });
+      console.log('打开日志文件夹', { path: logPath });
     } catch (error) {
-      log.error('打开日志文件夹失败', error as Error);
+      console.error('打开日志文件夹失败', error as Error);
     }
   }
 
@@ -614,9 +615,9 @@ export class ApplicationMenu {
     try {
       const configPath = app.getPath('userData');
       await shell.openPath(configPath);
-      log.info('打开配置文件夹', { path: configPath });
+      console.log('打开配置文件夹', { path: configPath });
     } catch (error) {
-      log.error('打开配置文件夹失败', error as Error);
+      console.error('打开配置文件夹失败', error as Error);
     }
   }
 
@@ -638,7 +639,7 @@ export class ApplicationMenu {
 
     if (choice.response === 1) {
       focusedWindow?.webContents.send('menu:reset-application');
-      log.info('重置应用');
+      console.log('重置应用');
     }
   }
 
@@ -647,7 +648,7 @@ export class ApplicationMenu {
    */
   private openUserGuide(): void {
     shell.openExternal('https://docs.claude.com/user-guide');
-    log.info('打开用户指南');
+    console.log('打开用户指南');
   }
 
   /**
@@ -655,7 +656,7 @@ export class ApplicationMenu {
    */
   private openFAQ(): void {
     shell.openExternal('https://docs.claude.com/faq');
-    log.info('打开FAQ');
+    console.log('打开FAQ');
   }
 
   /**
@@ -663,7 +664,7 @@ export class ApplicationMenu {
    */
   private openTechnicalSupport(): void {
     shell.openExternal('https://support.claude.com');
-    log.info('打开技术支持');
+    console.log('打开技术支持');
   }
 
   /**
@@ -674,7 +675,7 @@ export class ApplicationMenu {
     if (focusedWindow) {
       focusedWindow.webContents.send('menu:check-for-updates');
     }
-    log.info('检查更新');
+    console.log('检查更新');
   }
 
   /**
@@ -723,7 +724,7 @@ export class ApplicationMenu {
       }
     }
 
-    log.debug('菜单状态已更新', state);
+    console.log('菜单状态已更新', state);
   }
 
   /**
@@ -740,7 +741,7 @@ export class ApplicationMenu {
     if (this.menu) {
       // Electron会自动处理菜单的清理
       this.menu = null;
-      log.info('应用菜单已销毁');
+      console.log('应用菜单已销毁');
     }
   }
 }
@@ -749,7 +750,7 @@ export class ApplicationMenu {
  * 创建应用菜单
  */
 export function createApplicationMenu(): ApplicationMenu {
-  log.info('创建应用菜单');
+  console.log('创建应用菜单');
   return new ApplicationMenu();
 }
 
@@ -764,6 +765,6 @@ export function updateApplicationMenuState(state: {
   const menu = Menu.getApplicationMenu();
   if (menu) {
     // 这里可以添加菜单状态更新逻辑
-    log.debug('应用菜单状态更新请求', state);
+    console.log('应用菜单状态更新请求', state);
   }
 }

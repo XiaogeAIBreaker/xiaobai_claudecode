@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "build:renderer": "tsc src/renderer/index.ts --outDir dist/renderer --target es2020 --module es2020 --moduleResolution node --lib es2020,dom --strict --esModuleInterop --allowSyntheticDefaultImports --skipLibCheck --resolveJsonModule"
+  }
+}
