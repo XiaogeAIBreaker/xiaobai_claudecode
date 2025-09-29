@@ -3,7 +3,7 @@
  * 检测Google连接状态
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -42,7 +42,6 @@ interface NetworkCheckItem {
  */
 interface NetworkCheckStepProps {
   onComplete: (data?: any) => void;
-  onError: (error: string) => void;
   onNext: () => void;
   canGoNext: boolean;
 }
@@ -52,7 +51,6 @@ interface NetworkCheckStepProps {
  */
 const NetworkCheckStep: React.FC<NetworkCheckStepProps> = ({
   onComplete,
-  onError,
   onNext: _onNext,
   canGoNext: _canGoNext
 }) => {
@@ -73,16 +71,16 @@ const NetworkCheckStep: React.FC<NetworkCheckStepProps> = ({
   /**
    * 更新检查项状态
    */
-  const updateCheckItem = (id: string, updates: Partial<NetworkCheckItem>) => {
+  const updateCheckItem = useCallback((id: string, updates: Partial<NetworkCheckItem>) => {
     setCheckItems(prev => prev.map(item =>
       item.id === id ? { ...item, ...updates } : item
     ));
-  };
+  }, []);
 
   /**
    * 开始网络检查
    */
-  const startNetworkCheck = async () => {
+  const startNetworkCheck = useCallback(async () => {
     try {
       setChecking(true);
       setCheckComplete(false);
@@ -122,7 +120,7 @@ const NetworkCheckStep: React.FC<NetworkCheckStepProps> = ({
     } finally {
       setChecking(false);
     }
-  };
+  }, [onComplete, updateCheckItem]);
 
   /**
    * 执行Google连接检查
@@ -198,7 +196,7 @@ const NetworkCheckStep: React.FC<NetworkCheckStepProps> = ({
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [startNetworkCheck]);
 
   return (
     <Box sx={{
@@ -258,19 +256,28 @@ const NetworkCheckStep: React.FC<NetworkCheckStepProps> = ({
         flexDirection: 'column',
         gap: 2
       }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Button
-            variant="outlined"
-            onClick={startNetworkCheck}
-            disabled={checking}
-          >
-            重新检查
-          </Button>
-        </Box>
+        {/* 根据检查状态决定是否显示按钮 */}
+        {(() => {
+          const googleItem = checkItems.find(item => item.id === 'google');
+          const showButton = googleItem?.status === 'error' || googleItem?.status === 'pending';
+          const buttonText = googleItem?.status === 'pending' ? '开始检查' : '重新检查';
+
+          return showButton ? (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+              <Button
+                variant="outlined"
+                onClick={startNetworkCheck}
+                disabled={checking}
+              >
+                {buttonText}
+              </Button>
+            </Box>
+          ) : null;
+        })()}
 
         {checkComplete && (
           <Alert severity="success" sx={{ width: '100%' }}>
-            Google连接检查完成，请点击下方"下一步"按钮继续。
+            Google连接检查完成，请点击下方&ldquo;下一步&rdquo;按钮继续。
           </Alert>
         )}
       </Box>
