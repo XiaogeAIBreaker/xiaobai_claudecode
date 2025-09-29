@@ -93,25 +93,22 @@ const ClaudeInstallStep: React.FC<ClaudeInstallStepProps> = ({
 
       <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'space-between' }}>
         <Box />
-        <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {!installed && (
             <Button
               variant="contained"
               onClick={startClaudeInstallation}
               disabled={installing}
               startIcon={<Download />}
-              sx={{ mr: 1 }}
             >
               安装 Claude CLI
             </Button>
           )}
-          <Button
-            variant="contained"
-            onClick={onNext}
-            disabled={!installed || installing}
-          >
-            继续
-          </Button>
+          {installed && (
+            <Alert severity="success">
+              Claude CLI 已安装完成，请点击下方"下一步"按钮继续。
+            </Alert>
+          )}
         </Box>
       </Box>
     </Box>

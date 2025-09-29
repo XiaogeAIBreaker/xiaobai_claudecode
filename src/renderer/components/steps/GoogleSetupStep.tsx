@@ -107,9 +107,12 @@ const GoogleSetupStep: React.FC<GoogleSetupStepProps> = ({
         <Button variant="outlined" onClick={checkGoogleAccess} disabled={checking}>
           重新检查
         </Button>
-        <Button variant="contained" onClick={onNext}>
-          继续
-        </Button>
+
+        {detectionResult && (
+          <Alert severity="success" sx={{ ml: 2, flex: 1 }}>
+            Google服务检查完成，请点击下方"下一步"按钮继续。
+          </Alert>
+        )}
       </Box>
     </Box>
   );

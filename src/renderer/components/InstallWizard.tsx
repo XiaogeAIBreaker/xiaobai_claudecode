@@ -404,23 +404,13 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
           上一步
         </Button>
 
-        <Box>
-          <Button
-            onClick={onCancel}
-            disabled={wizardState.status === InstallerStatus.INSTALLING}
-            sx={{ mr: 1 }}
-          >
-            取消
-          </Button>
-
-          <Button
-            onClick={goToNextStep}
-            disabled={!wizardState.canGoForward || wizardState.status === InstallerStatus.INSTALLING}
-            variant="contained"
-          >
-            {getCurrentStepIndex() === INSTALL_STEPS.length - 1 ? '完成' : '下一步'}
-          </Button>
-        </Box>
+        <Button
+          onClick={goToNextStep}
+          disabled={!wizardState.canGoForward || wizardState.status === InstallerStatus.INSTALLING}
+          variant="contained"
+        >
+          {getCurrentStepIndex() === INSTALL_STEPS.length - 1 ? '完成' : '下一步'}
+        </Button>
       </Box>
     </Box>
   );

@@ -79,13 +79,17 @@ const ApiConfigStep: React.FC<ApiConfigStepProps> = ({
 
       <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'space-between' }}>
         <Box />
-        <Box>
-          <Button variant="outlined" onClick={configureApi} sx={{ mr: 1 }}>
-            配置API
-          </Button>
-          <Button variant="contained" onClick={onNext} disabled={!configured}>
-            继续
-          </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {!configured && (
+            <Button variant="contained" onClick={configureApi}>
+              配置API
+            </Button>
+          )}
+          {configured && (
+            <Alert severity="success">
+              API配置完成，请点击下方"下一步"按钮继续。
+            </Alert>
+          )}
         </Box>
       </Box>
     </Box>

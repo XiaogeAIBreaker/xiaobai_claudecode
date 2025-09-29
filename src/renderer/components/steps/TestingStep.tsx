@@ -108,9 +108,12 @@ const TestingStep: React.FC<TestingStepProps> = ({
         <Button variant="outlined" onClick={runTests} disabled={testing}>
           {testing ? '测试中...' : '运行测试'}
         </Button>
-        <Button variant="contained" onClick={onNext} disabled={!allTestsPassed}>
-          继续
-        </Button>
+
+        {allTestsPassed && (
+          <Alert severity="success" sx={{ ml: 2, flex: 1 }}>
+            测试验证完成，请点击下方"下一步"按钮继续。
+          </Alert>
+        )}
       </Box>
     </Box>
   );

@@ -291,26 +291,23 @@ const NodeInstallStep: React.FC<NodeInstallStepProps> = ({
           重新检查
         </Button>
 
-        <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {!isNodeInstalled && (
             <Button
               variant="contained"
               onClick={() => setShowInstallDialog(true)}
               disabled={checking || installing}
               startIcon={<Download />}
-              sx={{ mr: 1 }}
             >
               安装 Node.js
             </Button>
           )}
 
-          <Button
-            variant="contained"
-            onClick={onNext}
-            disabled={!isNodeInstalled || !versionCheck.compatible || checking || installing}
-          >
-            继续
-          </Button>
+          {isNodeInstalled && versionCheck.compatible && (
+            <Alert severity="success">
+              Node.js 已安装，请点击下方"下一步"按钮继续。
+            </Alert>
+          )}
         </Box>
       </Box>
 
