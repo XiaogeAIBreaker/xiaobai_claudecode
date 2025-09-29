@@ -68,6 +68,22 @@ export interface StepState {
   required: boolean;
   /** 额外数据 */
   data?: Record<string, any>;
+
+  /** UI相关状态 (T002扩展) */
+  ui?: {
+    /** 用户可见的状态消息 */
+    userMessage?: string;
+    /** 详细的技术消息 */
+    technicalMessage?: string;
+    /** 是否显示详细信息 */
+    showDetails?: boolean;
+    /** 重试次数 */
+    retryCount?: number;
+    /** 最大重试次数 */
+    maxRetries?: number;
+    /** 是否用户手动触发 */
+    userTriggered?: boolean;
+  };
 }
 
 /**
@@ -94,6 +110,20 @@ export interface InstallerState {
   maxRetries: number;
   /** 当前重试次数 */
   currentRetries: number;
+
+  /** UI导航状态 (T002扩展) */
+  navigation?: {
+    /** 是否可以导航到上一步 */
+    canNavigatePrevious: boolean;
+    /** 是否可以导航到下一步 */
+    canNavigateNext: boolean;
+    /** 当前步骤索引 */
+    currentStepIndex: number;
+    /** 已完成的步骤数 */
+    completedSteps: number;
+    /** 用户界面模式 */
+    uiMode: 'wizard' | 'advanced' | 'silent';
+  };
 }
 
 /**

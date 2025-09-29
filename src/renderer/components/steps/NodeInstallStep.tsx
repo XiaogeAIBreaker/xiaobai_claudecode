@@ -304,13 +304,7 @@ const NodeInstallStep: React.FC<NodeInstallStepProps> = ({
             </Button>
           )}
 
-          <Button
-            variant="contained"
-            onClick={onNext}
-            disabled={!isNodeInstalled || !versionCheck.compatible || checking || installing}
-          >
-            继续
-          </Button>
+          {/* T023: 移除"继续"按钮，导航逻辑已移至底部ActionBar */}
         </Box>
       </Box>
 

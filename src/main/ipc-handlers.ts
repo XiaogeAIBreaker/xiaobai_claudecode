@@ -332,7 +332,7 @@ function setupInstallationHandlers(appState: AppState): void {
 }
 
 /**
- * UI状态相关处理器
+ * T029: UI状态相关处理器 - 支持UI状态事件
  */
 function setupUIHandlers(appState: AppState): void {
   // 获取UI状态
@@ -344,11 +344,130 @@ function setupUIHandlers(appState: AppState): void {
   ipcMain.handle('ui:update-state', async (_, updates: any) => {
     Object.assign(appState.uiState, updates);
     appState.uiState.lastUpdated = new Date();
-    
+
     // 通知渲染进程状态已更新
     if (appState.mainWindow) {
       appState.mainWindow.webContents.send('ui:state-updated', appState.uiState);
     }
+  });
+
+  // T029: 步骤导航事件
+  ipcMain.handle('ui:navigate-to-step', async (_, step: InstallStep) => {
+    log.info('收到步骤导航请求', { step });
+
+    // 更新UI状态中的当前步骤
+    if (appState.uiState) {
+      appState.uiState.currentStep = step;
+      appState.uiState.lastUpdated = new Date();
+    }
+
+    // 通知渲染进程步骤已变化
+    if (appState.mainWindow) {
+      appState.mainWindow.webContents.send('ui:step-changed', step);
+    }
+  });
+
+  // T029: 步骤状态更新事件
+  ipcMain.handle('ui:update-step-state', async (_, step: InstallStep, stepState: any) => {
+    log.info('收到步骤状态更新请求', { step, status: stepState.status });
+
+    // 更新UI状态中的步骤状态
+    if (appState.uiState && appState.uiState.stepStates) {
+      appState.uiState.stepStates[step] = {
+        ...appState.uiState.stepStates[step],
+        ...stepState
+      };
+      appState.uiState.lastUpdated = new Date();
+    }
+
+    // 通知渲染进程步骤状态已更新
+    if (appState.mainWindow) {
+      appState.mainWindow.webContents.send('ui:step-state-updated', { step, stepState });
+    }
+  });
+
+  // T029: ActionBar按钮点击事件
+  ipcMain.handle('ui:button-click', async (_, buttonType: 'previous' | 'next' | 'retry' | 'skip', context?: any) => {
+    log.info('收到按钮点击事件', { buttonType, context });
+
+    // 通知渲染进程按钮点击事件
+    if (appState.mainWindow) {
+      appState.mainWindow.webContents.send('ui:button-clicked', { buttonType, context });
+    }
+  });
+
+  // T029: UI状态同步事件
+  ipcMain.handle('ui:sync-with-installer', async () => {
+    log.info('收到UI状态同步请求');
+
+    // 同步UI状态和安装器状态
+    const syncResult = {
+      success: true,
+      timestamp: new Date(),
+      uiState: appState.uiState,
+      installerState: appState.installerState
+    };
+
+    // 通知渲染进程同步完成
+    if (appState.mainWindow) {
+      appState.mainWindow.webContents.send('ui:sync-completed', syncResult);
+    }
+
+    return syncResult;
+  });
+
+  // T029: 键盘快捷键事件
+  ipcMain.handle('ui:keyboard-shortcut', async (_, shortcut: string, context?: any) => {
+    log.info('收到键盘快捷键事件', { shortcut, context });
+
+    // 处理常见的键盘快捷键
+    switch (shortcut) {
+      case 'previous':
+      case 'next':
+        // 转发为按钮点击事件
+        if (appState.mainWindow) {
+          appState.mainWindow.webContents.send('ui:button-clicked', { buttonType: shortcut, context });
+        }
+        break;
+
+      case 'cancel':
+        // 处理取消事件
+        if (appState.mainWindow) {
+          appState.mainWindow.webContents.send('ui:cancel-requested', context);
+        }
+        break;
+    }
+  });
+
+  // T029: UI验证事件
+  ipcMain.handle('ui:validate-state', async () => {
+    log.info('收到UI状态验证请求');
+
+    // 基础验证逻辑
+    const validation = {
+      isValid: true,
+      errors: [] as string[],
+      warnings: [] as string[],
+      timestamp: new Date()
+    };
+
+    // 检查UI状态的基本完整性
+    if (!appState.uiState) {
+      validation.isValid = false;
+      validation.errors.push('UI状态未初始化');
+    } else {
+      if (!appState.uiState.currentStep) {
+        validation.errors.push('当前步骤未设置');
+      }
+
+      if (!appState.uiState.stepStates) {
+        validation.errors.push('步骤状态未初始化');
+      }
+    }
+
+    validation.isValid = validation.errors.length === 0;
+
+    return validation;
   });
 
   // 显示通知

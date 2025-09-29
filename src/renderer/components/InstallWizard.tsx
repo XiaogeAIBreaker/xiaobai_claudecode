@@ -3,7 +3,7 @@
  * 管理整个安装流程的状态和导航
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Stepper,
@@ -17,10 +17,16 @@ import {
   Typography,
   Fade
 } from '@mui/material';
-import { InstallStep, InstallerStatus } from '../../shared/types/installer';
+import { InstallStep, InstallerStatus, StepStatus } from '../../shared/types/installer';
 import { DetectionResult } from '../../shared/types/environment';
 import { UserConfig } from '../../shared/types/config';
 import { usePerformance } from '../hooks/usePerformance';
+
+// 导入ActionBar组件
+import { ConnectedActionBar } from './ActionBar/ActionBar';
+
+// 导入导航控制器
+import { useNavigationController } from './InstallationWizard/useNavigationController';
 
 // 导入步骤组件
 import NetworkCheckStep from './steps/NetworkCheckStep';
@@ -110,125 +116,75 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
     threshold: 1000
   });
 
-  // 状态管理
-  const [wizardState, setWizardState] = useState<WizardState>({
-    currentStep: InstallStep.NETWORK_CHECK,
-    status: InstallerStatus.INITIALIZING,
-    progress: 0,
-    canGoBack: false,
-    canGoForward: false,
+  // T026: 使用新的导航控制器替代原有状态管理
+  const navigationController = useNavigationController({
+    onStepChange: (step) => {
+      measureInteraction(`step-navigation-${step}`);
+    },
+    onComplete,
+    onCancel
+  });
+
+  // 向后兼容的状态映射
+  const wizardState: WizardState = useMemo(() => ({
+    currentStep: navigationController.currentStep,
+    status: navigationController.getCurrentStepStatus() === StepStatus.RUNNING
+      ? InstallerStatus.INSTALLING
+      : InstallerStatus.INITIALIZING,
+    progress: navigationController.uiState.stepStates[navigationController.currentStep]?.progress || 0,
+    canGoBack: navigationController.canGoBack,
+    canGoForward: navigationController.canGoForward,
     errors: [],
     warnings: [],
     config: null,
     detectionResults: {}
-  });
+  }), [navigationController]);
 
   const [loading, setLoading] = useState(false);
-
-  /**
-   * 更新向导状态
-   */
-  const updateWizardState = useCallback((updates: Partial<WizardState>) => {
-    setWizardState(prev => ({ ...prev, ...updates }));
-  }, []);
 
   /**
    * 获取当前步骤索引
    */
   const getCurrentStepIndex = useCallback(() => {
-    return INSTALL_STEPS.findIndex(step => step.key === wizardState.currentStep);
-  }, [wizardState.currentStep]);
+    return navigationController.currentStepIndex;
+  }, [navigationController.currentStepIndex]);
 
   /**
-   * 前往下一步
+   * T026: 使用导航控制器的导航方法
    */
-  const goToNextStep = useCallback(() => {
-    const currentIndex = getCurrentStepIndex();
-    if (currentIndex < INSTALL_STEPS.length - 1) {
-      const nextStep = INSTALL_STEPS[currentIndex + 1];
-      updateWizardState({
-        currentStep: nextStep.key,
-        canGoBack: true,
-        canGoForward: false
-      });
-    }
-  }, [getCurrentStepIndex, updateWizardState]);
+  const goToNextStep = useCallback(async () => {
+    await navigationController.goToNextStep();
+  }, [navigationController]);
+
+  // 导航方法现在由ActionBar组件通过导航控制器直接处理
 
   /**
-   * 返回上一步
+   * T026: 使用导航控制器的步骤处理方法
    */
-  const goToPreviousStep = useCallback(() => {
-    const currentIndex = getCurrentStepIndex();
-    if (currentIndex > 0) {
-      const previousStep = INSTALL_STEPS[currentIndex - 1];
-      updateWizardState({
-        currentStep: previousStep.key,
-        canGoBack: currentIndex > 1,
-        canGoForward: true
-      });
-    }
-  }, [getCurrentStepIndex, updateWizardState]);
-
-  /**
-   * 跳转到指定步骤
-   */
-  const goToStep = useCallback((step: InstallStep) => {
-    const stepIndex = INSTALL_STEPS.findIndex(s => s.key === step);
-    if (stepIndex !== -1) {
-      updateWizardState({
-        currentStep: step,
-        canGoBack: stepIndex > 0,
-        canGoForward: false
-      });
-    }
-  }, [updateWizardState]);
-
-  /**
-   * 步骤完成处理
-   */
-  const handleStepComplete = useCallback((stepData?: any) => {
-    const currentIndex = getCurrentStepIndex();
-
-    // 更新进度
-    const newProgress = ((currentIndex + 1) / INSTALL_STEPS.length) * 100;
-    updateWizardState({
-      progress: newProgress,
-      canGoForward: currentIndex < INSTALL_STEPS.length - 1
-    });
+  const handleStepComplete = useCallback(async (stepData?: any) => {
+    const currentStep = navigationController.currentStep;
+    await navigationController.completeStep(currentStep, stepData);
 
     // 如果是最后一步，调用完成回调
-    if (currentIndex === INSTALL_STEPS.length - 1) {
-      updateWizardState({ status: InstallerStatus.COMPLETED });
-      onComplete?.();
+    if (navigationController.isLastStep && onComplete) {
+      onComplete();
     }
-  }, [getCurrentStepIndex, updateWizardState, onComplete]);
+  }, [navigationController, onComplete]);
 
-  /**
-   * 步骤错误处理
-   */
-  const handleStepError = useCallback((error: string) => {
-    updateWizardState({
-      errors: [...wizardState.errors, error],
-      status: InstallerStatus.FAILED
-    });
-  }, [wizardState.errors, updateWizardState]);
+  const handleStepError = useCallback(async (error: string) => {
+    const currentStep = navigationController.currentStep;
+    await navigationController.failStep(currentStep, error);
+  }, [navigationController]);
 
-  /**
-   * 清除错误
-   */
   const clearErrors = useCallback(() => {
-    updateWizardState({ errors: [] });
-  }, [updateWizardState]);
+    // 错误清除逻辑现在由导航控制器处理
+    console.log('清除错误');
+  }, []);
 
-  /**
-   * 重试当前步骤
-   */
-  const retryCurrentStep = useCallback(() => {
-    updateWizardState({
-      errors: [],
-      status: InstallerStatus.INSTALLING
-    });
-  }, [updateWizardState]);
+  const retryCurrentStep = useCallback(async () => {
+    const currentStep = navigationController.currentStep;
+    await navigationController.startStep(currentStep);
+  }, [navigationController]);
 
   /**
    * 渲染当前步骤组件
@@ -270,8 +226,8 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
     const loadConfig = async () => {
       try {
         setLoading(true);
-        const config = await window.electronAPI.config.load();
-        updateWizardState({ config });
+        await window.electronAPI.config.load();
+        // 配置加载成功，现在由导航控制器管理状态
       } catch (error) {
         console.error('加载配置失败:', error);
       } finally {
@@ -280,7 +236,7 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
     };
 
     loadConfig();
-  }, [updateWizardState]);
+  }, []);
 
   /**
    * 监听菜单事件
@@ -290,20 +246,13 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
       switch (event) {
         case 'menu:start-installation':
           if (wizardState.currentStep === InstallStep.NETWORK_CHECK) {
-            updateWizardState({ status: InstallerStatus.INSTALLING });
+            navigationController.startStep(InstallStep.NETWORK_CHECK);
           }
           break;
         case 'menu:restart-installation':
-          updateWizardState({
-            currentStep: InstallStep.NETWORK_CHECK,
-            status: InstallerStatus.INITIALIZING,
-            progress: 0,
-            errors: [],
-            warnings: []
-          });
+          navigationController.resetToStep(InstallStep.NETWORK_CHECK);
           break;
         case 'menu:stop-installation':
-          updateWizardState({ status: InstallerStatus.CANCELLED });
           onCancel?.();
           break;
       }
@@ -314,7 +263,7 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
     return () => {
       window.electronAPI.off.menuEvent();
     };
-  }, [wizardState.currentStep, updateWizardState, onCancel]);
+  }, [wizardState.currentStep, navigationController, onCancel]);
 
   if (loading) {
     return (
@@ -394,34 +343,8 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
         </Fade>
       </Box>
 
-      {/* 导航按钮 */}
-      <Box sx={{ p: 3, borderTop: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between' }}>
-        <Button
-          onClick={goToPreviousStep}
-          disabled={!wizardState.canGoBack || wizardState.status === InstallerStatus.INSTALLING}
-          variant="outlined"
-        >
-          上一步
-        </Button>
-
-        <Box>
-          <Button
-            onClick={onCancel}
-            disabled={wizardState.status === InstallerStatus.INSTALLING}
-            sx={{ mr: 1 }}
-          >
-            取消
-          </Button>
-
-          <Button
-            onClick={goToNextStep}
-            disabled={!wizardState.canGoForward || wizardState.status === InstallerStatus.INSTALLING}
-            variant="contained"
-          >
-            {getCurrentStepIndex() === INSTALL_STEPS.length - 1 ? '完成' : '下一步'}
-          </Button>
-        </Box>
-      </Box>
+      {/* 新的ActionBar组件 - 整合所有导航逻辑 */}
+      <ConnectedActionBar />
     </Box>
   );
 };

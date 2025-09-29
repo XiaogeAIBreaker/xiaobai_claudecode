@@ -3,7 +3,7 @@
  * 基于data-model.md实体定义
  */
 
-import { InstallStep, StepStatus } from './installer';
+import { InstallStep, StepStatus, StepState } from './installer';
 import { ErrorInfo } from './config';
 
 /**
@@ -347,4 +347,170 @@ export interface ComponentProps {
   ariaLabel?: string;
   /** 事件处理器 */
   onEvent?: (event: UIEvent) => void;
+}
+
+// ============================================================================
+// 安装向导专用UI状态类型 (T001扩展)
+// ============================================================================
+
+/**
+ * 按钮状态接口
+ */
+export interface ButtonState {
+  /** 是否可见 */
+  visible: boolean;
+  /** 是否启用 */
+  enabled: boolean;
+  /** 按钮标签 */
+  label: string;
+  /** 按钮样式变体 */
+  variant: 'primary' | 'secondary' | 'disabled';
+  /** 是否显示加载状态 */
+  loading?: boolean;
+}
+
+/**
+ * 安装向导UI状态接口
+ * 专门管理安装向导的界面状态
+ */
+export interface InstallationUIState {
+  /** 当前激活的步骤 */
+  currentStep: InstallStep;
+
+  /** 底部操作栏状态 */
+  actionBar: {
+    /** 上一步按钮状态 */
+    previousButton: ButtonState;
+    /** 下一步按钮状态 */
+    nextButton: ButtonState;
+  };
+
+  /** 每个步骤的UI状态 */
+  stepStates: Record<InstallStep, StepUIState>;
+
+  /** 整体UI设置 */
+  settings: {
+    /** 是否显示进度条 */
+    showProgress: boolean;
+    /** 是否启用动画 */
+    enableAnimations: boolean;
+    /** 是否显示详细日志 */
+    showDetailedLogs: boolean;
+  };
+}
+
+/**
+ * 步骤UI状态接口
+ * 扩展现有StepState以添加UI特定属性
+ */
+export interface StepUIState extends StepState {
+  /** 步骤内按钮显示控制 */
+  inlineButtons: {
+    /** 继续安装按钮（将被移除） */
+    continueInstall: {
+      visible: boolean;
+      enabled: boolean;
+    };
+    /** 重试按钮（失败时显示） */
+    retry: {
+      visible: boolean;
+      enabled: boolean;
+    };
+    /** 跳过按钮（可选步骤） */
+    skip?: {
+      visible: boolean;
+      enabled: boolean;
+    };
+  };
+
+  /** UI特定的状态指示器 */
+  uiIndicators: {
+    /** 是否显示旋转器 */
+    showSpinner: boolean;
+    /** 是否显示成功勾选 */
+    showCheckmark: boolean;
+    /** 是否显示错误图标 */
+    showErrorIcon: boolean;
+    /** 进度百分比显示 */
+    progressPercent: number;
+    /** 状态颜色 */
+    statusColor: 'default' | 'success' | 'error' | 'warning' | 'info';
+  };
+
+  /** 用户交互状态 */
+  interaction: {
+    /** 是否可以与用户交互 */
+    interactive: boolean;
+    /** 是否正在等待用户输入 */
+    awaitingInput: boolean;
+    /** 是否显示帮助信息 */
+    showHelp: boolean;
+  };
+}
+
+/**
+ * 操作栏状态接口
+ * 专门管理底部操作栏的状态
+ */
+export interface ActionBarState {
+  /** 当前步骤索引（0-6，对应7个步骤） */
+  stepIndex: number;
+
+  /** 总步骤数 */
+  totalSteps: number;
+
+  /** 是否允许向前导航 */
+  canNavigateNext: boolean;
+
+  /** 是否允许向后导航 */
+  canNavigatePrevious: boolean;
+
+  /** 下一步操作类型 */
+  nextActionType: 'next' | 'complete' | 'disabled';
+
+  /** 按钮组状态 */
+  buttons: {
+    previous: ButtonState;
+    next: ButtonState;
+  };
+
+  /** 进度指示器设置 */
+  progressIndicator: {
+    /** 是否显示步骤计数器 */
+    showStepCounter: boolean;
+    /** 是否显示进度条 */
+    showProgressBar: boolean;
+    /** 进度条样式 */
+    progressStyle: 'linear' | 'circular' | 'stepped';
+  };
+}
+
+/**
+ * UI状态转换规则接口
+ */
+export interface UIStateRules {
+  /** 步骤状态到UI状态的映射规则 */
+  stepStatusMapping: Record<StepStatus, Partial<StepUIState['uiIndicators']>>;
+
+  /** 操作栏状态计算规则 */
+  actionBarRules: {
+    /** 第一步特殊规则 */
+    firstStep: Partial<ActionBarState>;
+    /** 最后一步特殊规则 */
+    lastStep: Partial<ActionBarState>;
+    /** 中间步骤默认规则 */
+    middleStep: Partial<ActionBarState>;
+  };
+
+  /** 按钮状态转换规则 */
+  buttonStateRules: {
+    /** 成功状态按钮配置 */
+    onSuccess: Partial<ButtonState>;
+    /** 失败状态按钮配置 */
+    onFailure: Partial<ButtonState>;
+    /** 运行状态按钮配置 */
+    onRunning: Partial<ButtonState>;
+    /** 等待状态按钮配置 */
+    onPending: Partial<ButtonState>;
+  };
 }

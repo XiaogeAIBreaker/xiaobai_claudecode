@@ -77,16 +77,11 @@ const ApiConfigStep: React.FC<ApiConfigStepProps> = ({
         </CardContent>
       </Card>
 
-      <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'space-between' }}>
-        <Box />
-        <Box>
-          <Button variant="outlined" onClick={configureApi} sx={{ mr: 1 }}>
-            配置API
-          </Button>
-          <Button variant="contained" onClick={onNext} disabled={!configured}>
-            继续
-          </Button>
-        </Box>
+      <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'flex-start' }}>
+        <Button variant="outlined" onClick={configureApi}>
+          配置API
+        </Button>
+        {/* T023: 移除"继续"按钮，导航逻辑已移至底部ActionBar */}
       </Box>
     </Box>
   );

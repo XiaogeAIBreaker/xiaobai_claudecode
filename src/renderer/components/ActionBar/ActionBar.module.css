@@ -1,0 +1,205 @@
+/**
+ * T021: 优化ActionBar样式
+ * 为ActionBar组件提供专用的CSS模块样式
+ */
+
+.actionBar {
+  padding: 24px;
+  border-top: 1px solid var(--divider-color, #e0e0e0);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--background-paper, #ffffff);
+  min-height: 80px;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.3s ease;
+}
+
+.actionBar:hover {
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.buttonGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.button {
+  min-width: 120px;
+  height: 40px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 4px;
+  text-transform: none;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+.button:hover:not(.disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.button:active:not(.disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.primaryButton {
+  background-color: var(--primary-color, #1976d2);
+  color: white;
+}
+
+.primaryButton:hover:not(.disabled) {
+  background-color: var(--primary-dark, #1565c0);
+}
+
+.secondaryButton {
+  background-color: transparent;
+  color: var(--primary-color, #1976d2);
+  border: 1px solid var(--primary-color, #1976d2);
+}
+
+.secondaryButton:hover:not(.disabled) {
+  background-color: var(--primary-color, #1976d2);
+  color: white;
+}
+
+.disabled {
+  opacity: 0.6;
+  cursor: not-allowed !important;
+  background-color: var(--action-disabled-background, #f5f5f5) !important;
+  color: var(--action-disabled, #9e9e9e) !important;
+  border-color: var(--action-disabled, #9e9e9e) !important;
+}
+
+.disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.loadingSpinner {
+  margin-right: 8px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.stepInfo {
+  display: flex;
+  align-items: center;
+  color: var(--text-secondary, #666666);
+  font-size: 12px;
+  font-weight: 400;
+  user-select: none;
+}
+
+.stepInfo .stepNumber {
+  font-weight: 600;
+  color: var(--primary-color, #1976d2);
+}
+
+.hidden {
+  display: none;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .actionBar {
+    padding: 16px;
+    min-height: 60px;
+  }
+
+  .button {
+    min-width: 100px;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .stepInfo {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .actionBar {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 12px;
+  }
+
+  .buttonGroup {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .button {
+    flex: 1;
+    max-width: 140px;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .actionBar {
+    border-top: 2px solid;
+  }
+
+  .button {
+    border-width: 2px;
+  }
+}
+
+/* 减少动画模式支持 */
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+
+  .button:hover:not(.disabled) {
+    transform: none;
+  }
+
+  .loadingSpinner {
+    animation: none;
+  }
+}
+
+/* 深色主题支持 */
+@media (prefers-color-scheme: dark) {
+  .actionBar {
+    --background-paper: #1e1e1e;
+    --divider-color: #404040;
+    --primary-color: #90caf9;
+    --primary-dark: #64b5f6;
+    --text-secondary: #b0b0b0;
+    --action-disabled-background: #2c2c2c;
+    --action-disabled: #757575;
+  }
+}

@@ -105,13 +105,7 @@ const ClaudeInstallStep: React.FC<ClaudeInstallStepProps> = ({
               安装 Claude CLI
             </Button>
           )}
-          <Button
-            variant="contained"
-            onClick={onNext}
-            disabled={!installed || installing}
-          >
-            继续
-          </Button>
+          {/* T023: 移除"继续"按钮，导航逻辑已移至底部ActionBar */}
         </Box>
       </Box>
     </Box>

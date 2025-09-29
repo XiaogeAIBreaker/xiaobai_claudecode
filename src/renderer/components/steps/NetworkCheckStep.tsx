@@ -457,7 +457,7 @@ const NetworkCheckStep: React.FC<NetworkCheckStepProps> = ({
       </Accordion>
 
       {/* 操作按钮 */}
-      <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'space-between' }}>
+      <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'flex-start' }}>
         <Button
           variant="outlined"
           onClick={startNetworkCheck}
@@ -465,14 +465,7 @@ const NetworkCheckStep: React.FC<NetworkCheckStepProps> = ({
         >
           重新检查
         </Button>
-
-        <Button
-          variant="contained"
-          onClick={onNext}
-          disabled={!checkComplete || checking}
-        >
-          继续安装
-        </Button>
+        {/* T023: 移除"继续安装"按钮，导航逻辑已移至底部ActionBar */}
       </Box>
     </Box>
   );

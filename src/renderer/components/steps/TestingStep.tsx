@@ -104,13 +104,11 @@ const TestingStep: React.FC<TestingStepProps> = ({
         </CardContent>
       </Card>
 
-      <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'space-between' }}>
+      <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'flex-start' }}>
         <Button variant="outlined" onClick={runTests} disabled={testing}>
           {testing ? '测试中...' : '运行测试'}
         </Button>
-        <Button variant="contained" onClick={onNext} disabled={!allTestsPassed}>
-          继续
-        </Button>
+        {/* T023: 移除"继续"按钮，导航逻辑已移至底部ActionBar */}
       </Box>
     </Box>
   );

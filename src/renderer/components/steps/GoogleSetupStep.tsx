@@ -103,13 +103,11 @@ const GoogleSetupStep: React.FC<GoogleSetupStepProps> = ({
         </CardContent>
       </Card>
 
-      <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'space-between' }}>
+      <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'flex-start' }}>
         <Button variant="outlined" onClick={checkGoogleAccess} disabled={checking}>
           重新检查
         </Button>
-        <Button variant="contained" onClick={onNext}>
-          继续
-        </Button>
+        {/* T023: 移除"继续"按钮，导航逻辑已移至底部ActionBar */}
       </Box>
     </Box>
   );

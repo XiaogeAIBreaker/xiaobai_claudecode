@@ -67,10 +67,28 @@ const electronAPI = {
     cancel: (): Promise<void> => ipcRenderer.invoke('install:cancel')
   },
 
-  // UI状态管理
+  // T030: UI状态管理 - 添加UI状态相关API
   ui: {
     getState: () => ipcRenderer.invoke('ui:get-state'),
     updateState: (updates: any) => ipcRenderer.invoke('ui:update-state', updates),
+
+    // T030: 步骤导航API
+    navigateToStep: (step: string) => ipcRenderer.invoke('ui:navigate-to-step', step),
+    updateStepState: (step: string, stepState: any) => ipcRenderer.invoke('ui:update-step-state', step, stepState),
+
+    // T030: 按钮事件API
+    buttonClick: (buttonType: 'previous' | 'next' | 'retry' | 'skip', context?: any) =>
+      ipcRenderer.invoke('ui:button-click', buttonType, context),
+
+    // T030: 状态同步API
+    syncWithInstaller: () => ipcRenderer.invoke('ui:sync-with-installer'),
+    validateState: () => ipcRenderer.invoke('ui:validate-state'),
+
+    // T030: 键盘快捷键API
+    keyboardShortcut: (shortcut: string, context?: any) =>
+      ipcRenderer.invoke('ui:keyboard-shortcut', shortcut, context),
+
+    // 原有API
     showNotification: (notification: {
       title: string;
       body: string;
@@ -128,6 +146,27 @@ const electronAPI = {
 
     notificationAdded: (callback: (notification: any) => void) => {
       ipcRenderer.on('ui:notification-added', (_, notification) => callback(notification));
+    },
+
+    // T030: 新增UI状态事件监听
+    stepChanged: (callback: (step: string) => void) => {
+      ipcRenderer.on('ui:step-changed', (_, step) => callback(step));
+    },
+
+    stepStateUpdated: (callback: (data: { step: string; stepState: any }) => void) => {
+      ipcRenderer.on('ui:step-state-updated', (_, data) => callback(data));
+    },
+
+    buttonClicked: (callback: (data: { buttonType: string; context?: any }) => void) => {
+      ipcRenderer.on('ui:button-clicked', (_, data) => callback(data));
+    },
+
+    syncCompleted: (callback: (result: any) => void) => {
+      ipcRenderer.on('ui:sync-completed', (_, result) => callback(result));
+    },
+
+    cancelRequested: (callback: (context?: any) => void) => {
+      ipcRenderer.on('ui:cancel-requested', (_, context) => callback(context));
     }
   },
 
@@ -165,6 +204,27 @@ const electronAPI = {
 
     notificationAdded: () => {
       ipcRenderer.removeAllListeners('ui:notification-added');
+    },
+
+    // T030: 移除新增的UI状态事件监听
+    stepChanged: () => {
+      ipcRenderer.removeAllListeners('ui:step-changed');
+    },
+
+    stepStateUpdated: () => {
+      ipcRenderer.removeAllListeners('ui:step-state-updated');
+    },
+
+    buttonClicked: () => {
+      ipcRenderer.removeAllListeners('ui:button-clicked');
+    },
+
+    syncCompleted: () => {
+      ipcRenderer.removeAllListeners('ui:sync-completed');
+    },
+
+    cancelRequested: () => {
+      ipcRenderer.removeAllListeners('ui:cancel-requested');
     }
   }
 };
