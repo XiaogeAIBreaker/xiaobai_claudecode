@@ -4,7 +4,8 @@
  */
 
 import { ipcMain, dialog, shell, app } from 'electron';
-import { InstallStep, ProgressEvent, InstallResult } from '../shared/types/installer';
+import { InstallStep, ProgressEvent } from '../shared/types/installer';
+import { InstallResult } from '../shared/types/electron-api';
 import { DetectionResult } from '../shared/types/environment';
 import { UserConfig } from '../shared/types/config';
 import { log } from '../shared/utils/logger';
@@ -13,8 +14,7 @@ import { networkDetector } from '../shared/detectors/network';
 import { nodeJsDetector } from '../shared/detectors/nodejs';
 import { googleDetector } from '../shared/detectors/google';
 import { claudeCliDetector } from '../shared/detectors/claude-cli';
-import { nodeJsInstaller } from '../shared/installers/nodejs';
-import { claudeCliInstaller } from '../shared/installers/claude-cli';
+import { NodeJSInstaller } from './services/nodejs-installer';
 
 /**
  * 应用状态接口（从main.ts导入的类型）
@@ -270,38 +270,65 @@ function setupDetectionHandlers(): void {
  * 安装相关处理器
  */
 function setupInstallationHandlers(appState: AppState): void {
-  // Node.js安装
-  ipcMain.handle('install:nodejs', async (_, progressCallback?: (event: ProgressEvent) => void): Promise<InstallResult> => {
+  const nodeInstaller = new NodeJSInstaller();
+
+  // 检查Node.js安装状态
+  ipcMain.handle('install:check-nodejs', async () => {
     try {
-      log.info('开始Node.js安装');
-      
-      if (progressCallback) {
-        nodeJsInstaller.setProgressCallback(progressCallback);
-      }
-      
-      return await nodeJsInstaller.install();
+      const result = await nodeInstaller.checkNodeJS();
+      return {
+        success: true,
+        data: result
+      };
     } catch (error) {
-      log.error('Node.js安装失败', error as Error);
-      throw error;
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
     }
   });
 
-  // Claude CLI安装
-  ipcMain.handle('install:claude-cli', async (_, apiKey?: string, progressCallback?: (event: ProgressEvent) => void): Promise<InstallResult> => {
+  // Node.js安装
+  ipcMain.handle('install:nodejs', async (event): Promise<InstallResult> => {
     try {
-      log.info('开始Claude CLI安装');
-      
-      // API密钥将通过安装器构造函数或其他公共方法设置
-      
-      if (progressCallback) {
-        claudeCliInstaller.setProgressCallback(progressCallback);
+      log.info('开始Node.js安装');
+
+      // 设置进度回调，向渲染进程发送进度更新
+      nodeInstaller.setProgressCallback((progress) => {
+        event.sender.send('install:nodejs-progress', progress);
+      });
+
+      const result = await nodeInstaller.install();
+      if (result.success) {
+        return { success: true };
+      } else {
+        return {
+          success: false,
+          error: result.error
+        };
       }
-      
-      return await claudeCliInstaller.install();
     } catch (error) {
-      log.error('Claude CLI安装失败', error as Error);
-      throw error;
+      log.error('Node.js安装失败', error as Error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
     }
+  });
+
+  // 取消Node.js安装
+  ipcMain.handle('install:cancel-nodejs', async () => {
+    // 这里可以实现安装取消逻辑
+    // 目前我们的脚本不支持中途取消，但可以为将来扩展
+    return { success: true };
+  });
+
+  // TODO: Claude CLI安装 (暂未实现)
+  ipcMain.handle('install:claude-cli', async (_, apiKey?: string, progressCallback?: (event: ProgressEvent) => void): Promise<InstallResult> => {
+    return {
+      success: false,
+      error: 'Claude CLI安装功能暂未实现'
+    };
   });
 
   // 获取安装进度

@@ -59,8 +59,40 @@ const electronAPI = {
 
   // 安装管理
   install: {
-    nodejs: (progressCallback?: (event: ProgressEvent) => void): Promise<InstallResult> =>
-      ipcRenderer.invoke('install:nodejs', progressCallback),
+    // Node.js安装 - 支持一键安装模式
+    nodejs: (progressCallback?: (event: ProgressEvent) => void): Promise<InstallResult> => {
+      if (progressCallback) {
+        // 监听进度更新
+        const progressHandler = (_: any, progress: any) => progressCallback(progress);
+        ipcRenderer.on('install:nodejs-progress', progressHandler);
+
+        // 在安装完成或失败后清理监听器
+        const cleanup = () => {
+          ipcRenderer.removeListener('install:nodejs-progress', progressHandler);
+        };
+
+        return ipcRenderer.invoke('install:nodejs')
+          .then(result => {
+            cleanup();
+            return result;
+          })
+          .catch(error => {
+            cleanup();
+            throw error;
+          });
+      }
+
+      return ipcRenderer.invoke('install:nodejs');
+    },
+
+    // 检查Node.js安装状态
+    checkNodeJS: (): Promise<{ success: boolean; data?: any; error?: string }> =>
+      ipcRenderer.invoke('install:check-nodejs'),
+
+    // 取消安装
+    cancelNodeJS: (): Promise<{ success: boolean }> =>
+      ipcRenderer.invoke('install:cancel-nodejs'),
+
     claudeCli: (apiKey?: string, progressCallback?: (event: ProgressEvent) => void): Promise<InstallResult> =>
       ipcRenderer.invoke('install:claude-cli', apiKey, progressCallback),
     getProgress: (step: string): Promise<number> => ipcRenderer.invoke('install:get-progress', step),

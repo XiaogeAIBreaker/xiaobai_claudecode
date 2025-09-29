@@ -107,6 +107,10 @@
       {
         "from": "config",
         "to": "config"
+      },
+      {
+        "from": "scripts",
+        "to": "scripts"
       }
     ],
     "win": {
