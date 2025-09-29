@@ -427,3 +427,40 @@ export const IPC_CHANNELS = {
  * 类型定义导出
  */
 export type IpcChannelName = typeof IPC_CHANNELS[keyof typeof IPC_CHANNELS];
+
+/**
+ * 注册所有IPC处理器
+ */
+export function registerAllHandlers(): void {
+  console.log('注册所有IPC处理器...');
+
+  try {
+    // 初始化IPC框架
+    initializeIpcFramework();
+
+    // 这里可以注册具体的处理器
+    // 目前先初始化基础框架
+
+    console.log('所有IPC处理器注册完成');
+  } catch (error) {
+    console.error('注册IPC处理器失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 注销所有IPC处理器
+ */
+export function unregisterAllHandlers(): void {
+  console.log('注销所有IPC处理器...');
+
+  try {
+    // 清理IPC框架
+    cleanupIpcFramework();
+
+    console.log('所有IPC处理器注销完成');
+  } catch (error) {
+    console.error('注销IPC处理器失败:', error);
+    throw error;
+  }
+}

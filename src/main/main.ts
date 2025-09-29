@@ -156,14 +156,9 @@ class MainApplication {
       console.log('Electron应用程序准备就绪');
       this.state.isReady = true;
 
-      // 创建启动画面
-      await this.createSplashWindow();
-
-      // 延迟创建主窗口
-      setTimeout(async () => {
-        await this.createMainWindow();
-        this.closeSplashWindow();
-      }, 2000);
+      // 直接创建主窗口，不使用启动画面和延迟
+      console.log('立即创建主窗口...');
+      await this.createMainWindow();
     });
 
     // 所有窗口关闭
@@ -278,7 +273,10 @@ class MainApplication {
           preload: join(__dirname, '../preload/preload.js'),
           webSecurity: !this.state.isDevelopment
         },
-        show: false // 延迟显示，等内容加载完成
+        show: true, // 立即显示窗口
+        center: true, // 窗口居中
+        alwaysOnTop: false, // 不强制置顶（避免干扰）
+        focusable: true // 确保可以获得焦点
       });
 
       // 设置窗口图标
@@ -292,15 +290,24 @@ class MainApplication {
       // 配置窗口事件
       this.setupWindowEvents();
 
-      // 显示窗口
+      // 显示窗口并确保获得焦点
       this.state.mainWindow.show();
+      this.state.mainWindow.focus();
+
+      // 确保窗口在前台显示
+      this.state.mainWindow.moveTop();
+
+      // macOS特殊处理
+      if (process.platform === 'darwin' && app.dock) {
+        app.dock.show();
+      }
 
       // 开发环境打开开发者工具
       if (this.state.isDevelopment) {
         this.state.mainWindow.webContents.openDevTools();
       }
 
-      console.log('主窗口创建完成');
+      console.log('主窗口创建完成并已显示');
 
     } catch (error) {
       console.error('创建主窗口失败:', error);
@@ -405,12 +412,12 @@ class MainApplication {
     });
 
     // 页面加载失败
-    this.state.mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    this.state.mainWindow.webContents.on('did-fail-load', (_, errorCode, errorDescription) => {
       console.error('页面加载失败:', errorCode, errorDescription);
     });
 
     // 控制台消息
-    this.state.mainWindow.webContents.on('console-message', (event, level, message) => {
+    this.state.mainWindow.webContents.on('console-message', (_, level, message) => {
       if (this.state.isDevelopment) {
         console.log(`[Renderer ${level}]:`, message);
       }
@@ -443,16 +450,6 @@ class MainApplication {
     });
   }
 
-  /**
-   * 关闭启动画面
-   */
-  private closeSplashWindow(): void {
-    if (this.state.splashWindow) {
-      console.log('关闭启动画面');
-      this.state.splashWindow.close();
-      this.state.splashWindow = null;
-    }
-  }
 
   /**
    * 创建启动画面HTML
@@ -699,8 +696,8 @@ async function startApplication(): Promise<void> {
   }
 }
 
-// 如果是主模块，直接启动应用
-if (require.main === module) {
+// 启动应用程序（确保在Electron环境中运行）
+if (typeof process !== 'undefined' && process.versions && process.versions.electron) {
   startApplication();
 }
 

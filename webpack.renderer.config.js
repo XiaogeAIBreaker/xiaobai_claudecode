@@ -28,6 +28,10 @@ module.exports = (env, argv) => {
         '@assets': path.resolve(__dirname, 'assets'),
         '@config': path.resolve(__dirname, 'config'),
       },
+      fallback: {
+        "process": require.resolve("process/browser"),
+        "buffer": require.resolve("buffer"),
+      }
     },
     module: {
       rules: [
@@ -69,14 +73,13 @@ module.exports = (env, argv) => {
         minify: !isDevelopment,
       }),
       new webpack.DefinePlugin({
-        global: 'globalThis',
+        'process.env.NODE_ENV': JSON.stringify(isDevelopment ? 'development' : 'production'),
+      }),
+      new webpack.ProvidePlugin({
+        process: 'process/browser',
+        Buffer: ['buffer', 'Buffer'],
       }),
     ],
-    node: {
-      global: true,
-      __filename: false,
-      __dirname: false,
-    },
     devServer: {
       port: 3000,
       hot: true,

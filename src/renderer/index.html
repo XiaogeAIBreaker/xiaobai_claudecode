@@ -6,6 +6,13 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
     <title>Claude CLI 安装程序</title>
     <link rel="stylesheet" href="./styles/main.css">
+
+    <!-- 修复global未定义问题 - 必须在所有其他脚本之前 -->
+    <script>
+        if (typeof global === 'undefined') {
+            window.global = globalThis;
+        }
+    </script>
 </head>
 <body>
     <div id="root">
@@ -17,8 +24,6 @@
         </div>
     </div>
 
-    <!-- 加载应用脚本 -->
-    <script src="./index.js"></script>
 
     <style>
         /* 初始加载样式 */

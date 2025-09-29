@@ -13,7 +13,7 @@ import { performanceMonitor } from '../shared/utils/performance';
 performanceMonitor.checkpoint('renderer-start');
 
 // 检查Electron API是否可用
-if (!window.electronAPI) {
+if (!(window as any).electronAPI) {
   // 在启动阶段，需要明确日志记录API加载状态
   // eslint-disable-next-line no-console
   console.error('Electron API 未正确加载');
