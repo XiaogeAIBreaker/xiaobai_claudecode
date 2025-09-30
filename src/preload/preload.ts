@@ -125,6 +125,19 @@ const electronAPI = {
     getPaths: () => ipcRenderer.invoke('system:get-paths')
   },
 
+  // Google 认证
+  google: {
+    openRegistrationBrowser: () => ipcRenderer.invoke('google:open-registration-browser'),
+    closeRegistrationBrowser: () => ipcRenderer.invoke('google:close-registration-browser'),
+    cleanup: () => ipcRenderer.invoke('google:cleanup'),
+    onRegistrationProgress: (callback: (step: number) => void) => {
+      ipcRenderer.on('google:registration-progress', (_, step) => callback(step));
+    },
+    offRegistrationProgress: () => {
+      ipcRenderer.removeAllListeners('google:registration-progress');
+    }
+  },
+
   // 事件监听
   on: {
     menuEvent: (callback: (event: string, data?: any) => void) => {

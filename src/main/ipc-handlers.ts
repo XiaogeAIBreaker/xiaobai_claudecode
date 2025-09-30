@@ -15,6 +15,7 @@ import { nodeJsDetector } from '../shared/detectors/nodejs';
 import { googleDetector } from '../shared/detectors/google';
 import { claudeCliDetector } from '../shared/detectors/claude-cli';
 import { NodeJSInstaller } from './services/nodejs-installer';
+import { GoogleAuthHelper } from './services/google-auth-helper';
 
 /**
  * 应用状态接口（从main.ts导入的类型）
@@ -34,21 +35,24 @@ export function setupIpcHandlers(appState: AppState): void {
 
   // 应用控制相关
   setupAppHandlers(appState);
-  
+
   // 配置管理相关
   setupConfigHandlers();
-  
+
   // 环境检测相关
   setupDetectionHandlers();
-  
+
   // 安装相关
   setupInstallationHandlers(appState);
-  
+
   // UI状态相关
   setupUIHandlers(appState);
-  
+
   // 系统集成相关
   setupSystemHandlers();
+
+  // Google 认证相关
+  setupGoogleHandlers(appState);
 
   log.info('IPC处理器设置完成');
 }
@@ -485,6 +489,81 @@ function setupSystemHandlers(): void {
       documents: app.getPath('documents'),
       desktop: app.getPath('desktop')
     };
+  });
+}
+
+/**
+ * Google 认证相关处理器
+ */
+function setupGoogleHandlers(appState: AppState): void {
+  let googleAuthHelper: GoogleAuthHelper | null = null;
+
+  // 初始化 Google 认证助手
+  const initGoogleAuthHelper = () => {
+    if (!googleAuthHelper && appState.mainWindow) {
+      googleAuthHelper = new GoogleAuthHelper(appState.mainWindow);
+
+      // 设置进度回调
+      googleAuthHelper.setProgressCallback((step: number) => {
+        if (appState.mainWindow && !appState.mainWindow.isDestroyed()) {
+          appState.mainWindow.webContents.send('google:registration-progress', step);
+        }
+      });
+    }
+    return googleAuthHelper;
+  };
+
+  // 打开 Google 注册浏览器
+  ipcMain.handle('google:open-registration-browser', async () => {
+    try {
+      log.info('收到打开 Google 注册浏览器请求');
+      const helper = initGoogleAuthHelper();
+      if (helper) {
+        await helper.openRegistrationBrowser();
+        return { success: true };
+      }
+      throw new Error('无法初始化 Google 认证助手');
+    } catch (error) {
+      log.error('打开 Google 注册浏览器失败', error as Error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  });
+
+  // 关闭 Google 注册浏览器
+  ipcMain.handle('google:close-registration-browser', async () => {
+    try {
+      log.info('收到关闭 Google 注册浏览器请求');
+      if (googleAuthHelper) {
+        await googleAuthHelper.closeRegistrationBrowser();
+      }
+      return { success: true };
+    } catch (error) {
+      log.error('关闭 Google 注册浏览器失败', error as Error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  });
+
+  // 清理 Google 认证助手
+  ipcMain.handle('google:cleanup', async () => {
+    try {
+      if (googleAuthHelper) {
+        googleAuthHelper.cleanup();
+        googleAuthHelper = null;
+      }
+      return { success: true };
+    } catch (error) {
+      log.error('清理 Google 认证助手失败', error as Error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
   });
 }
 
