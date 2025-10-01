@@ -16,6 +16,7 @@ import { googleDetector } from '../shared/detectors/google';
 import { claudeCliDetector } from '../shared/detectors/claude-cli';
 import { NodeJSInstaller } from './services/nodejs-installer';
 import { GoogleAuthHelper } from './services/google-auth-helper';
+import { ClaudeCliInstaller } from './services/claude-cli-installer';
 
 /**
  * 应用状态接口（从main.ts导入的类型）
@@ -327,12 +328,44 @@ function setupInstallationHandlers(appState: AppState): void {
     return { success: true };
   });
 
-  // TODO: Claude CLI安装 (暂未实现)
-  ipcMain.handle('install:claude-cli', async (_, apiKey?: string, progressCallback?: (event: ProgressEvent) => void): Promise<InstallResult> => {
-    return {
-      success: false,
-      error: 'Claude CLI安装功能暂未实现'
-    };
+  // 检查 Claude CLI 安装状态
+  ipcMain.handle('install:check-claude-cli', async () => {
+    try {
+      const installer = new ClaudeCliInstaller();
+      const result = await installer.checkInstalled();
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error) {
+      log.error('检查 Claude CLI 失败', error as Error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  });
+
+  // Claude CLI 安装
+  ipcMain.handle('install:claude-cli', async (event): Promise<InstallResult> => {
+    try {
+      log.info('开始 Claude CLI 安装');
+      const installer = new ClaudeCliInstaller();
+
+      // 设置进度回调
+      installer.setProgressCallback((progress) => {
+        event.sender.send('install:claude-cli-progress', progress);
+      });
+
+      const result = await installer.install();
+      return result;
+    } catch (error) {
+      log.error('Claude CLI 安装失败', error as Error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
   });
 
   // 获取安装进度

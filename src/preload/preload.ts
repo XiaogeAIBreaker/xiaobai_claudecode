@@ -93,8 +93,34 @@ const electronAPI = {
     cancelNodeJS: (): Promise<{ success: boolean }> =>
       ipcRenderer.invoke('install:cancel-nodejs'),
 
-    claudeCli: (apiKey?: string, progressCallback?: (event: ProgressEvent) => void): Promise<InstallResult> =>
-      ipcRenderer.invoke('install:claude-cli', apiKey, progressCallback),
+    // 检查 Claude CLI 安装状态
+    checkClaudeCli: (): Promise<{ success: boolean; data?: { installed: boolean; version?: string }; error?: string }> =>
+      ipcRenderer.invoke('install:check-claude-cli'),
+
+    // Claude CLI 安装
+    claudeCli: (progressCallback?: (event: ProgressEvent) => void): Promise<InstallResult> => {
+      if (progressCallback) {
+        const progressHandler = (_: any, progress: any) => progressCallback(progress);
+        ipcRenderer.on('install:claude-cli-progress', progressHandler);
+
+        const cleanup = () => {
+          ipcRenderer.removeListener('install:claude-cli-progress', progressHandler);
+        };
+
+        return ipcRenderer.invoke('install:claude-cli')
+          .then(result => {
+            cleanup();
+            return result;
+          })
+          .catch(error => {
+            cleanup();
+            throw error;
+          });
+      }
+
+      return ipcRenderer.invoke('install:claude-cli');
+    },
+
     getProgress: (step: string): Promise<number> => ipcRenderer.invoke('install:get-progress', step),
     cancel: (): Promise<void> => ipcRenderer.invoke('install:cancel')
   },

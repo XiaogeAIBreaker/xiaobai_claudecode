@@ -2,7 +2,7 @@
  * T035: Claude CLI安装步骤组件
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -10,7 +10,8 @@ import {
   Alert,
   Card,
   CardContent,
-  LinearProgress
+  LinearProgress,
+  CircularProgress
 } from '@mui/material';
 import { Download, CheckCircle } from '@mui/icons-material';
 import { ProgressEvent, InstallResult } from '../../../shared/types/installer';
@@ -28,11 +29,38 @@ const ClaudeInstallStep: React.FC<ClaudeInstallStepProps> = ({
   onNext,
   canGoNext
 }) => {
+  const [checking, setChecking] = useState(true);
   const [installing, setInstalling] = useState(false);
   const [installProgress, setInstallProgress] = useState(0);
   const [installMessage, setInstallMessage] = useState('');
   const [installed, setInstalled] = useState(false);
+  const [version, setVersion] = useState<string | undefined>();
 
+  /**
+   * 检查 Claude CLI 是否已安装
+   */
+  const checkClaudeInstallation = async () => {
+    try {
+      setChecking(true);
+      const result = await window.electronAPI.install.checkClaudeCli();
+
+      if (result.success && result.data) {
+        if (result.data.installed) {
+          setInstalled(true);
+          setVersion(result.data.version);
+          onComplete({ installed: true, version: result.data.version });
+        }
+      }
+    } catch (error) {
+      console.error('检查 Claude CLI 失败:', error);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  /**
+   * 启动 Claude CLI 安装
+   */
   const startClaudeInstallation = async () => {
     try {
       setInstalling(true);
@@ -43,13 +71,14 @@ const ClaudeInstallStep: React.FC<ClaudeInstallStepProps> = ({
         setInstallMessage(event.message);
       };
 
-      const result: InstallResult = await window.electronAPI.install.claudeCli(undefined, progressCallback);
+      const result: InstallResult = await window.electronAPI.install.claudeCli(progressCallback);
 
       if (result.success) {
         setInstalled(true);
+        setVersion(result.message?.match(/版本\s+(.+?)\)/)?.[1]);
         onComplete(result);
       } else {
-        onError(result.errors?.[0]?.message || 'Claude CLI安装失败');
+        onError(result.error || result.errors?.[0]?.message || 'Claude CLI安装失败');
       }
     } catch (error: any) {
       onError(error instanceof Error ? error.message : 'Claude CLI安装过程中发生错误');
@@ -57,6 +86,13 @@ const ClaudeInstallStep: React.FC<ClaudeInstallStepProps> = ({
       setInstalling(false);
     }
   };
+
+  /**
+   * 组件挂载时自动检查
+   */
+  useEffect(() => {
+    checkClaudeInstallation();
+  }, []);
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -69,7 +105,12 @@ const ClaudeInstallStep: React.FC<ClaudeInstallStepProps> = ({
 
       <Card sx={{ mb: 2 }}>
         <CardContent>
-          {installing ? (
+          {checking ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <CircularProgress size={24} />
+              <Typography variant="body1">正在检测 Claude CLI 安装状态...</Typography>
+            </Box>
+          ) : installing ? (
             <>
               <Typography variant="h6" gutterBottom>
                 安装进度
@@ -81,7 +122,7 @@ const ClaudeInstallStep: React.FC<ClaudeInstallStepProps> = ({
             </>
           ) : installed ? (
             <Alert severity="success" icon={<CheckCircle />}>
-              Claude CLI 安装成功！
+              Claude CLI 已安装{version ? ` (版本 ${version})` : ''}
             </Alert>
           ) : (
             <Alert severity="info">
@@ -94,7 +135,7 @@ const ClaudeInstallStep: React.FC<ClaudeInstallStepProps> = ({
       <Box sx={{ mt: 'auto', pt: 2, display: 'flex', justifyContent: 'space-between' }}>
         <Box />
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {!installed && (
+          {!installed && !checking && (
             <Button
               variant="contained"
               onClick={startClaudeInstallation}
