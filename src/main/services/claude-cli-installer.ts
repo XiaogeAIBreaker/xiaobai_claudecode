@@ -10,6 +10,7 @@ import * as sudo from '@vscode/sudo-prompt';
 import { log } from '../../shared/utils/logger';
 import { ProgressEvent, InstallResult } from '../../shared/types/installer';
 import { executeCommand } from '../../shared/utils/system';
+import { getEnhancedEnv } from '../../shared/utils/env-loader';
 
 /**
  * Claude CLI 安装器类
@@ -156,9 +157,10 @@ export class ClaudeCliInstaller {
       log.info('执行本地安装到', { path: npmGlobalPath });
 
       // 配置 npm prefix 到用户目录
+      const enhancedEnv = getEnhancedEnv();
       const npmProcess = spawn('npm', ['install', '-g', '@anthropic-ai/claude-code', `--prefix=${npmGlobalPath}`], {
         shell: true,
-        env: { ...process.env }
+        env: enhancedEnv
       });
 
       let stdoutData = '';

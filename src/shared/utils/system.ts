@@ -9,6 +9,7 @@ import * as os from 'os';
 import { execSync, spawn, ChildProcess } from 'child_process';
 import { PlatformType, ArchType, SystemInfo } from '../types/environment';
 import { log } from './logger';
+import { getEnhancedEnv } from './env-loader';
 
 /**
  * 获取系统信息
@@ -315,11 +316,14 @@ export function executeCommand(command: string, options?: {
 }): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve, reject) => {
     const { cwd, timeout = 30000, env } = options || {};
-    
+
+    // 使用增强的环境变量（包含完整 PATH）
+    const enhancedEnv = getEnhancedEnv();
+
     const childProcess = spawn(command, {
       shell: true,
       cwd,
-      env: { ...process.env, ...env },
+      env: { ...enhancedEnv, ...env },
       stdio: ['ignore', 'pipe', 'pipe']
     });
     
@@ -368,11 +372,14 @@ export function executeCommandWithProgress(
 ): Promise<{ exitCode: number }> {
   return new Promise((resolve, reject) => {
     const { cwd, timeout = 30000, env } = options || {};
-    
+
+    // 使用增强的环境变量（包含完整 PATH）
+    const enhancedEnv = getEnhancedEnv();
+
     const childProcess = spawn(command, {
       shell: true,
       cwd,
-      env: { ...process.env, ...env },
+      env: { ...enhancedEnv, ...env },
       stdio: ['ignore', 'pipe', 'pipe']
     });
     
@@ -412,7 +419,8 @@ export function isProgramInPath(program: string): boolean {
   try {
     const platform = os.platform();
     const command = platform === 'win32' ? `where ${program}` : `which ${program}`;
-    execSync(command, { stdio: 'ignore' });
+    const enhancedEnv = getEnhancedEnv();
+    execSync(command, { stdio: 'ignore', env: enhancedEnv });
     return true;
   } catch {
     return false;
@@ -426,7 +434,8 @@ export function getProgramPath(program: string): string | null {
   try {
     const platform = os.platform();
     const command = platform === 'win32' ? `where ${program}` : `which ${program}`;
-    const output = execSync(command, { encoding: 'utf8' });
+    const enhancedEnv = getEnhancedEnv();
+    const output = execSync(command, { encoding: 'utf8', env: enhancedEnv });
     return output.trim().split('\n')[0] || null;
   } catch {
     return null;
@@ -438,7 +447,8 @@ export function getProgramPath(program: string): string | null {
  */
 export function getProgramVersion(program: string, versionFlag = '--version'): string | null {
   try {
-    const output = execSync(`${program} ${versionFlag}`, { encoding: 'utf8' });
+    const enhancedEnv = getEnhancedEnv();
+    const output = execSync(`${program} ${versionFlag}`, { encoding: 'utf8', env: enhancedEnv });
     // 提取版本号（通常在第一行）
     const versionMatch = output.match(/v?([0-9]+\.[0-9]+\.[0-9]+[^\s]*)/i);
     return versionMatch ? versionMatch[1] : null;
