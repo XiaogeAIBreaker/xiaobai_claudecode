@@ -17,6 +17,7 @@ import { claudeCliDetector } from '../shared/detectors/claude-cli';
 import { NodeJSInstaller } from './services/nodejs-installer';
 import { GoogleAuthHelper } from './services/google-auth-helper';
 import { ClaudeCliInstaller } from './services/claude-cli-installer';
+import { EnvManager } from './services/env-manager';
 
 /**
  * 应用状态接口（从main.ts导入的类型）
@@ -54,6 +55,9 @@ export function setupIpcHandlers(appState: AppState): void {
 
   // Google 认证相关
   setupGoogleHandlers(appState);
+
+  // 环境变量管理相关
+  setupEnvHandlers();
 
   log.info('IPC处理器设置完成');
 }
@@ -592,6 +596,58 @@ function setupGoogleHandlers(appState: AppState): void {
       return { success: true };
     } catch (error) {
       log.error('清理 Google 认证助手失败', error as Error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  });
+}
+
+/**
+ * 环境变量管理相关处理器
+ */
+function setupEnvHandlers(): void {
+  const envManager = new EnvManager();
+
+  // 获取环境变量
+  ipcMain.handle('env:get', async (_, keys: string[]) => {
+    try {
+      log.info('收到获取环境变量请求', { keys });
+      const vars = await envManager.getEnvVars(keys);
+      return { success: true, data: vars };
+    } catch (error) {
+      log.error('获取环境变量失败', error as Error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  });
+
+  // 设置环境变量
+  ipcMain.handle('env:set', async (_, vars: Record<string, string>) => {
+    try {
+      log.info('收到设置环境变量请求', { vars });
+      await envManager.setEnvVars(vars);
+      return { success: true };
+    } catch (error) {
+      log.error('设置环境变量失败', error as Error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  });
+
+  // 删除环境变量
+  ipcMain.handle('env:remove', async (_, keys: string[]) => {
+    try {
+      log.info('收到删除环境变量请求', { keys });
+      await envManager.removeEnvVars(keys);
+      return { success: true };
+    } catch (error) {
+      log.error('删除环境变量失败', error as Error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error)

@@ -164,6 +164,16 @@ const electronAPI = {
     }
   },
 
+  // 环境变量管理
+  env: {
+    get: (keys: string[]): Promise<{ success: boolean; data?: Record<string, string | undefined>; error?: string }> =>
+      ipcRenderer.invoke('env:get', keys),
+    set: (vars: Record<string, string>): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('env:set', vars),
+    remove: (keys: string[]): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('env:remove', keys)
+  },
+
   // 事件监听
   on: {
     menuEvent: (callback: (event: string, data?: any) => void) => {
