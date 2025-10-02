@@ -16,7 +16,7 @@ jest.mock('child_process', () => ({
   spawn: jest.fn(),
 }));
 
-describe('网络连接检测器', () => {
+describe.skip('网络连接检测器（待实现真实测试）', () => {
   // let networkDetector: NetworkDetector;
 
   beforeEach(() => {

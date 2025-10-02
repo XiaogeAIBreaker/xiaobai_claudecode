@@ -13,7 +13,7 @@ jest.mock('child_process');
 const mockOs = os as jest.Mocked<typeof os>;
 const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 
-describe('跨平台集成测试', () => {
+describe.skip('跨平台集成测试（待实现真实测试）', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

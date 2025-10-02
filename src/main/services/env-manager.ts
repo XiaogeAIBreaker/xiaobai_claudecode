@@ -8,6 +8,12 @@ import { join } from 'path';
 import { existsSync, readFileSync, appendFileSync } from 'fs';
 import { log } from '../../shared/utils/logger';
 import { executeCommand } from '../../shared/utils/system';
+import { getSharedConfigEntry } from '@shared/config';
+
+const shellFilesEntry = getSharedConfigEntry<string[]>('installer.env.shellFiles');
+const SHELL_CONFIG_FILES = shellFilesEntry?.value ?? ['.zshrc', '.bashrc', '.bash_profile', '.profile'];
+const variableBannerEntry = getSharedConfigEntry<string>('installer.env.variableBanner');
+const ENV_BANNER = variableBannerEntry?.value ?? '# Claude Code Environment Variables';
 
 /**
  * 环境变量管理器类
@@ -62,7 +68,7 @@ export class EnvManager {
    */
   private async readEnvFromShellConfig(key: string): Promise<string | undefined> {
     const home = homedir();
-    const configFiles = ['.zshrc', '.bashrc', '.bash_profile', '.profile'];
+    const configFiles = SHELL_CONFIG_FILES;
 
     for (const configFile of configFiles) {
       const configPath = join(home, configFile);
@@ -94,17 +100,15 @@ export class EnvManager {
   private async writeEnvToShellConfig(vars: Record<string, string>): Promise<void> {
     const home = homedir();
 
-    // 确定要写入的配置文件（优先 .zshrc，其次 .bashrc）
-    let targetFile = '.zshrc';
+    let targetFile = SHELL_CONFIG_FILES[0];
     let targetPath = join(home, targetFile);
 
-    if (!existsSync(targetPath)) {
-      targetFile = '.bashrc';
-      targetPath = join(home, targetFile);
-
-      if (!existsSync(targetPath)) {
-        targetFile = '.bash_profile';
-        targetPath = join(home, targetFile);
+    for (const file of SHELL_CONFIG_FILES) {
+      const candidatePath = join(home, file);
+      if (existsSync(candidatePath)) {
+        targetFile = file;
+        targetPath = candidatePath;
+        break;
       }
     }
 
@@ -117,7 +121,7 @@ export class EnvManager {
     }
 
     // 准备要添加的内容
-    const newLines: string[] = ['\n# Claude Code Environment Variables'];
+    const newLines: string[] = [`\n${ENV_BANNER}`];
 
     for (const [key, value] of Object.entries(vars)) {
       // 检查是否已存在
@@ -170,9 +174,7 @@ export class EnvManager {
 
       // 2. 从配置文件删除
       const home = homedir();
-      const configFiles = ['.zshrc', '.bashrc', '.bash_profile', '.profile'];
-
-      for (const configFile of configFiles) {
+      for (const configFile of SHELL_CONFIG_FILES) {
         const configPath = join(home, configFile);
 
         if (existsSync(configPath)) {

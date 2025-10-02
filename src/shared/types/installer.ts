@@ -136,6 +136,8 @@ export interface ProgressEvent {
   remainingTime?: number;
   /** 额外数据 */
   data?: Record<string, any>;
+  /** 步骤状态 */
+  status?: 'running' | 'success' | 'error';
 }
 
 /**
@@ -169,6 +171,8 @@ export interface InstallOptions {
 export interface InstallResult {
   /** 是否成功 */
   success: boolean;
+  /** 可选的概述信息 */
+  message?: string;
   /** 已安装的组件 */
   installedComponents: InstallerComponent[];
   /** 失败的步骤 */
@@ -181,6 +185,7 @@ export interface InstallResult {
     message: string;
     code?: string;
     details?: any;
+    recoverable?: boolean;
   }>;
   /** 警告信息 */
   warnings: Array<{

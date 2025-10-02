@@ -100,7 +100,7 @@
 - [x] T040 渲染进程入口和路由 in src/renderer/App.tsx, src/renderer/index.tsx
 
 ## Phase 3.4: Integration ✅
-- [x] T041 中文本地化和消息配置 in config/messages.json, src/shared/utils/i18n.ts
+- [x] T041 中文本地化和消息配置（后续改为直接使用 `SharedConfigurationCatalog`，原 `src/shared/utils/i18n.ts` 已移除）
 - [x] T042 微信二维码和静态资源 in assets/qr-codes/, assets/icons/
 - [x] T043 跨平台功能集成测试
 - [x] T044 错误处理和恢复机制验证

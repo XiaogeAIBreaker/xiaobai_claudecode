@@ -78,7 +78,7 @@ const ClaudeInstallStep: React.FC<ClaudeInstallStepProps> = ({
         setVersion(result.message?.match(/版本\s+(.+?)\)/)?.[1]);
         onComplete(result);
       } else {
-        onError(result.error || result.errors?.[0]?.message || 'Claude CLI安装失败');
+        onError(result.errors?.[0]?.message || 'Claude CLI安装失败');
       }
     } catch (error: any) {
       onError(error instanceof Error ? error.message : 'Claude CLI安装过程中发生错误');

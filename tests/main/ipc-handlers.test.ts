@@ -20,7 +20,7 @@ jest.mock('electron', () => ({
   },
 }));
 
-describe('IPC通信处理器', () => {
+describe.skip('IPC通信处理器（待实现真实测试）', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });

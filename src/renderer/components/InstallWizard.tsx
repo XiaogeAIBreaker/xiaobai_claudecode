@@ -3,7 +3,7 @@
  * 管理整个安装流程的状态和导航
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Stepper,
@@ -18,6 +18,8 @@ import {
   Fade
 } from '@mui/material';
 import { InstallStep, InstallerStatus } from '../../shared/types/installer';
+import { WorkflowDefinition, WorkflowId } from '../../shared/types/workflows';
+import useSharedConfig from '../hooks/useSharedConfig';
 import { DetectionResult } from '../../shared/types/environment';
 import { UserConfig } from '../../shared/types/config';
 import { usePerformance } from '../hooks/usePerformance';
@@ -31,46 +33,12 @@ import ApiConfigStep from './steps/ApiConfigStep';
 import TestingStep from './steps/TestingStep';
 import CompletionStep from './steps/CompletionStep';
 
-/**
- * 安装步骤定义
- */
-const INSTALL_STEPS = [
-  {
-    key: InstallStep.NETWORK_CHECK,
-    label: '网络检查',
-    description: '检测网络连接和代理设置'
-  },
-  {
-    key: InstallStep.NODEJS_INSTALL,
-    label: 'Node.js安装',
-    description: '下载并安装Node.js运行环境'
-  },
-  {
-    key: InstallStep.GOOGLE_SETUP,
-    label: 'Google设置',
-    description: '配置Google服务访问方式'
-  },
-  {
-    key: InstallStep.CLAUDE_CLI_SETUP,
-    label: 'Claude CLI安装',
-    description: '安装Claude命令行工具'
-  },
-  {
-    key: InstallStep.API_CONFIGURATION,
-    label: 'API配置',
-    description: '配置Claude API密钥'
-  },
-  {
-    key: InstallStep.TESTING,
-    label: '测试验证',
-    description: '验证安装和配置是否正确'
-  },
-  {
-    key: InstallStep.COMPLETION,
-    label: '完成',
-    description: '安装完成，开始使用'
-  }
-];
+type StepDefinition = {
+  key: InstallStep;
+  label: string;
+  description: string;
+  flowId: WorkflowId;
+};
 
 /**
  * 向导状态接口
@@ -110,6 +78,18 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
     threshold: 1000
   });
 
+  const {
+    value: supportedFlows,
+    loading: flowsLoading,
+    error: flowsError,
+  } = useSharedConfig<WorkflowId[]>('installer.workflow.supportedFlows');
+
+  const [workflowDefinitions, setWorkflowDefinitions] = useState<Record<WorkflowId, WorkflowDefinition>>(
+    () => ({}) as Record<WorkflowId, WorkflowDefinition>
+  );
+  const [workflowLoading, setWorkflowLoading] = useState<boolean>(false);
+  const [workflowError, setWorkflowError] = useState<Error | null>(null);
+
   // 状态管理
   const [wizardState, setWizardState] = useState<WizardState>({
     currentStep: InstallStep.NETWORK_CHECK,
@@ -125,6 +105,80 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
 
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!supportedFlows || supportedFlows.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+    setWorkflowLoading(true);
+
+    Promise.all(
+      supportedFlows.map(async (flowId) => {
+        const response = await window.electronAPI.workflowMap.sync(flowId as WorkflowId);
+        return { flowId: flowId as WorkflowId, workflow: response.workflow };
+      })
+    )
+      .then((results) => {
+        if (cancelled) {
+          return;
+        }
+
+        const nextDefinitions: Record<WorkflowId, WorkflowDefinition> = { ...workflowDefinitions };
+        results.forEach(({ flowId, workflow }) => {
+          if (workflow) {
+            nextDefinitions[flowId] = workflow;
+          }
+        });
+        setWorkflowDefinitions(nextDefinitions);
+        setWorkflowError(null);
+      })
+      .catch((err) => {
+        if (cancelled) {
+          return;
+        }
+        const normalized = err instanceof Error ? err : new Error(String(err));
+        setWorkflowError(normalized);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setWorkflowLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [supportedFlows]);
+
+  const stepDefinitions = useMemo<StepDefinition[]>(() => {
+    if (!supportedFlows || supportedFlows.length === 0) {
+      return [];
+    }
+
+    const definitions: StepDefinition[] = [];
+
+    supportedFlows.forEach((flowId) => {
+      const typedFlowId = flowId as WorkflowId;
+      const workflow = workflowDefinitions[typedFlowId];
+
+      if (!workflow) {
+        return;
+      }
+
+      workflow.steps.forEach((step) => {
+        definitions.push({
+          key: step.stepId as InstallStep,
+          label: step.title,
+          description: step.description,
+          flowId: typedFlowId,
+        });
+      });
+    });
+
+    return definitions;
+  }, [supportedFlows, workflowDefinitions]);
+
   /**
    * 更新向导状态
    */
@@ -132,27 +186,61 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
     setWizardState(prev => ({ ...prev, ...updates }));
   }, []);
 
+  useEffect(() => {
+    if (stepDefinitions.length === 0) {
+      return;
+    }
+
+    const currentIndex = stepDefinitions.findIndex(step => step.key === wizardState.currentStep);
+
+    if (currentIndex === -1) {
+      const firstStep = stepDefinitions[0];
+      if (wizardState.currentStep !== firstStep.key) {
+        updateWizardState({
+          currentStep: firstStep.key,
+          canGoBack: false,
+          canGoForward: stepDefinitions.length > 1,
+          progress: 0,
+        });
+      }
+      return;
+    }
+
+    const nextCanGoBack = currentIndex > 0;
+    const nextCanGoForward = currentIndex < stepDefinitions.length - 1;
+
+    if (wizardState.canGoBack !== nextCanGoBack || wizardState.canGoForward !== nextCanGoForward) {
+      updateWizardState({
+        canGoBack: nextCanGoBack,
+        canGoForward: nextCanGoForward,
+      });
+    }
+  }, [stepDefinitions, updateWizardState, wizardState.canGoBack, wizardState.canGoForward, wizardState.currentStep]);
+
   /**
    * 获取当前步骤索引
    */
   const getCurrentStepIndex = useCallback(() => {
-    return INSTALL_STEPS.findIndex(step => step.key === wizardState.currentStep);
-  }, [wizardState.currentStep]);
+    return stepDefinitions.findIndex(step => step.key === wizardState.currentStep);
+  }, [stepDefinitions, wizardState.currentStep]);
 
   /**
    * 前往下一步
    */
   const goToNextStep = useCallback(() => {
     const currentIndex = getCurrentStepIndex();
-    if (currentIndex < INSTALL_STEPS.length - 1) {
-      const nextStep = INSTALL_STEPS[currentIndex + 1];
+    if (currentIndex === -1) {
+      return;
+    }
+    if (currentIndex < stepDefinitions.length - 1) {
+      const nextStep = stepDefinitions[currentIndex + 1];
       updateWizardState({
         currentStep: nextStep.key,
         canGoBack: true,
         canGoForward: false
       });
     }
-  }, [getCurrentStepIndex, updateWizardState]);
+  }, [getCurrentStepIndex, stepDefinitions, updateWizardState]);
 
   /**
    * 返回上一步
@@ -160,20 +248,20 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
   const goToPreviousStep = useCallback(() => {
     const currentIndex = getCurrentStepIndex();
     if (currentIndex > 0) {
-      const previousStep = INSTALL_STEPS[currentIndex - 1];
+      const previousStep = stepDefinitions[currentIndex - 1];
       updateWizardState({
         currentStep: previousStep.key,
         canGoBack: currentIndex > 1,
         canGoForward: true
       });
     }
-  }, [getCurrentStepIndex, updateWizardState]);
+  }, [getCurrentStepIndex, stepDefinitions, updateWizardState]);
 
   /**
    * 跳转到指定步骤
    */
   const goToStep = useCallback((step: InstallStep) => {
-    const stepIndex = INSTALL_STEPS.findIndex(s => s.key === step);
+    const stepIndex = stepDefinitions.findIndex(s => s.key === step);
     if (stepIndex !== -1) {
       updateWizardState({
         currentStep: step,
@@ -181,7 +269,7 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
         canGoForward: false
       });
     }
-  }, [updateWizardState]);
+  }, [stepDefinitions, updateWizardState]);
 
   /**
    * 步骤完成处理
@@ -189,19 +277,23 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
   const handleStepComplete = useCallback((stepData?: any) => {
     const currentIndex = getCurrentStepIndex();
 
+    if (stepDefinitions.length === 0 || currentIndex === -1) {
+      return;
+    }
+
     // 更新进度
-    const newProgress = ((currentIndex + 1) / INSTALL_STEPS.length) * 100;
+    const newProgress = ((currentIndex + 1) / stepDefinitions.length) * 100;
     updateWizardState({
       progress: newProgress,
-      canGoForward: currentIndex < INSTALL_STEPS.length - 1
+      canGoForward: currentIndex < stepDefinitions.length - 1
     });
 
     // 如果是最后一步，调用完成回调
-    if (currentIndex === INSTALL_STEPS.length - 1) {
+    if (currentIndex === stepDefinitions.length - 1) {
       updateWizardState({ status: InstallerStatus.COMPLETED });
       onComplete?.();
     }
-  }, [getCurrentStepIndex, updateWizardState, onComplete]);
+  }, [getCurrentStepIndex, onComplete, stepDefinitions, updateWizardState]);
 
   /**
    * 步骤错误处理
@@ -316,7 +408,11 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
     };
   }, [wizardState.currentStep, updateWizardState, onCancel]);
 
-  if (loading) {
+  const currentStepIndex = getCurrentStepIndex();
+  const isLastStep = stepDefinitions.length > 0 && currentStepIndex === stepDefinitions.length - 1;
+  const isBootstrapping = loading || flowsLoading || workflowLoading || stepDefinitions.length === 0;
+
+  if (isBootstrapping) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
         <LinearProgress sx={{ width: '300px' }} />
@@ -335,8 +431,8 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
 
       {/* 步骤指示器 */}
       <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
-        <Stepper activeStep={getCurrentStepIndex()} alternativeLabel>
-          {INSTALL_STEPS.map((step) => (
+        <Stepper activeStep={Math.max(currentStepIndex, 0)} alternativeLabel>
+          {stepDefinitions.map((step) => (
             <Step key={step.key}>
               <StepLabel>
                 <Typography variant="caption" display="block">
@@ -350,6 +446,14 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
           ))}
         </Stepper>
       </Box>
+
+      {(flowsError || workflowError) && (
+        <Box sx={{ p: 2 }}>
+          <Alert severity="error">
+            {flowsError?.message || workflowError?.message || '无法加载安装流程配置，请稍后重试。'}
+          </Alert>
+        </Box>
+      )}
 
       {/* 错误显示 */}
       {wizardState.errors.length > 0 && (
@@ -409,7 +513,7 @@ const InstallWizard: React.FC<InstallWizardProps> = ({
           disabled={!wizardState.canGoForward || wizardState.status === InstallerStatus.INSTALLING}
           variant="contained"
         >
-          {getCurrentStepIndex() === INSTALL_STEPS.length - 1 ? '完成' : '下一步'}
+          {isLastStep ? '完成' : '下一步'}
         </Button>
       </Box>
     </Box>

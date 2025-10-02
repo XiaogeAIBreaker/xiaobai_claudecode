@@ -145,8 +145,7 @@ src/
     │   ├── logger.ts        # 日志系统
     │   ├── config.ts        # 配置管理
     │   ├── system.ts        # 系统工具
-    │   ├── performance.ts   # 性能监控
-    │   └── i18n.ts          # 国际化
+    │   └── performance.ts   # 性能监控
     ├── detectors/           # 环境检测模块
     │   ├── network.ts       # 网络检测
     │   ├── nodejs.ts        # Node.js检测
@@ -544,30 +543,6 @@ jobs:
       - run: npm ci
       - run: npm run build
 ```
-
-## 🌐 国际化支持
-
-### 多语言架构
-
-虽然主要面向中文用户，但架构支持多语言扩展：
-
-```typescript
-// i18n配置
-export enum SupportedLanguage {
-  ZH_CN = 'zh-CN',
-  EN_US = 'en-US'
-}
-
-export class I18nManager {
-  private currentLanguage = SupportedLanguage.ZH_CN;
-
-  getMessage(key: string, params?: Record<string, any>): string {
-    // 消息解析和参数插值
-  }
-}
-```
-
-### 消息管理
 
 所有用户可见文本统一管理在配置文件中：
 

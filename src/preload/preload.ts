@@ -7,6 +7,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { DetectionResult } from '../shared/types/environment';
 import { UserConfig } from '../shared/types/config';
 import { ProgressEvent, InstallResult } from '../shared/types/installer';
+import { SharedConfigurationEntry } from '../shared/types/shared-config';
+import { WorkflowSyncResponse, WorkflowId } from '../shared/types/workflows';
 
 /**
  * 暴露给渲染进程的API接口
@@ -41,6 +43,18 @@ const electronAPI = {
     reset: (): Promise<void> => ipcRenderer.invoke('config:reset'),
     export: (): Promise<string | null> => ipcRenderer.invoke('config:export'),
     import: (): Promise<UserConfig | null> => ipcRenderer.invoke('config:import')
+  },
+
+  // 共享配置
+  sharedConfig: {
+    get: <TValue = unknown>(id: string): Promise<SharedConfigurationEntry<TValue>> =>
+      ipcRenderer.invoke('ipc.shared-config.get', { id }),
+  },
+
+  // Workflow 映射
+  workflowMap: {
+    sync: (flowId: WorkflowId, version?: string): Promise<WorkflowSyncResponse> =>
+      ipcRenderer.invoke('ipc.workflow-map.sync', { flowId, version }),
   },
 
   // 环境检测
@@ -86,7 +100,7 @@ const electronAPI = {
     },
 
     // 检查Node.js安装状态
-    checkNodeJS: (): Promise<{ success: boolean; data?: any; error?: string }> =>
+    checkNodeJS: (): Promise<{ success: boolean; data?: any; error?: string; errors?: Array<{ message: string }> }> =>
       ipcRenderer.invoke('install:check-nodejs'),
 
     // 取消安装

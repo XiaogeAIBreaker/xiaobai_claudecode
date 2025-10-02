@@ -1,0 +1,105 @@
+{
+  "generatedAt": "2025-10-02T13:28:32.037Z",
+  "entries": [
+    {
+      "id": "network.proxy",
+      "files": [
+        "src/shared/config/catalog.ts",
+        "tests/contract/ipc.shared-config.get.spec.ts"
+      ]
+    },
+    {
+      "id": "environment.node.versioning",
+      "files": [
+        "src/renderer/components/steps/NodeInstallStep.tsx",
+        "src/shared/config/catalog.ts",
+        "src/shared/detectors/nodejs.ts",
+        "tests/setup.ts"
+      ]
+    },
+    {
+      "id": "environment.node.supportedArch",
+      "files": [
+        "src/shared/config/catalog.ts"
+      ]
+    },
+    {
+      "id": "installer.node.progressMessages",
+      "files": [
+        "src/main/services/nodejs-installer.ts",
+        "src/shared/config/catalog.ts"
+      ]
+    },
+    {
+      "id": "installer.cli.package",
+      "files": [
+        "src/main/services/claude-cli-installer.ts",
+        "src/shared/config/catalog.ts"
+      ]
+    },
+    {
+      "id": "installer.cli.progressMessages",
+      "files": [
+        "src/main/services/claude-cli-installer.ts",
+        "src/shared/config/catalog.ts"
+      ]
+    },
+    {
+      "id": "installer.cli.mirrors",
+      "files": [
+        "src/main/services/claude-cli-installer.ts",
+        "src/shared/config/catalog.ts"
+      ]
+    },
+    {
+      "id": "installer.env.shellBanner",
+      "files": [
+        "src/main/services/claude-cli-installer.ts",
+        "src/shared/config/catalog.ts"
+      ]
+    },
+    {
+      "id": "installer.env.shellFiles",
+      "files": [
+        "src/main/services/claude-cli-installer.ts",
+        "src/main/services/env-manager.ts",
+        "src/shared/config/catalog.ts"
+      ]
+    },
+    {
+      "id": "installer.env.variableBanner",
+      "files": [
+        "src/main/services/env-manager.ts",
+        "src/shared/config/catalog.ts"
+      ]
+    },
+    {
+      "id": "installer.workflow.supportedFlows",
+      "files": [
+        "src/renderer/components/InstallWizard.tsx",
+        "src/shared/config/catalog.ts",
+        "tests/setup.ts"
+      ]
+    },
+    {
+      "id": "installer.quickstart.lastValidatedAt",
+      "files": [
+        "src/shared/config/catalog.ts"
+      ]
+    },
+    {
+      "id": "installer.google.signupUrl",
+      "files": [
+        "src/main/services/google-auth-helper.ts",
+        "src/shared/config/catalog.ts"
+      ]
+    },
+    {
+      "id": "installer.google.windowOptions",
+      "files": [
+        "src/main/services/google-auth-helper.ts",
+        "src/shared/config/catalog.ts"
+      ]
+    }
+  ]
+}

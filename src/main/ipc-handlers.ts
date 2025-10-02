@@ -14,6 +14,9 @@ import { networkDetector } from '../shared/detectors/network';
 import { nodeJsDetector } from '../shared/detectors/nodejs';
 import { googleDetector } from '../shared/detectors/google';
 import { claudeCliDetector } from '../shared/detectors/claude-cli';
+import { allowedSharedConfigOrigins, getSharedConfigEntry } from '../shared/config';
+import { installerWorkflowMap, workflowVersion, getWorkflowById } from '../shared/workflows/map';
+import { WorkflowId } from '../shared/types/workflows';
 import { NodeJSInstaller } from './services/nodejs-installer';
 import { GoogleAuthHelper } from './services/google-auth-helper';
 import { ClaudeCliInstaller } from './services/claude-cli-installer';
@@ -40,6 +43,9 @@ export function setupIpcHandlers(appState: AppState): void {
 
   // 配置管理相关
   setupConfigHandlers();
+
+  // 共享数据源相关
+  setupSharedResourceHandlers();
 
   // 环境检测相关
   setupDetectionHandlers();
@@ -199,6 +205,83 @@ function setupConfigHandlers(): void {
       log.error('导入配置失败', error as Error);
       throw error;
     }
+  });
+}
+
+interface SharedConfigRequestPayload {
+  id: string;
+}
+
+interface WorkflowSyncPayload {
+  flowId: string;
+  version?: string;
+}
+
+function ensureAllowedOrigin(event: Electron.IpcMainInvokeEvent): void {
+  const origin = event.senderFrame?.url ?? '';
+  const authorized = allowedSharedConfigOrigins.some((allowedOrigin) => origin.startsWith(allowedOrigin));
+
+  if (!authorized) {
+    log.warn('拒绝来自未授权来源的共享配置访问', { origin });
+    throw new Error('shared-config/forbidden');
+  }
+}
+
+function isWorkflowId(value: string): value is WorkflowId {
+  return Object.prototype.hasOwnProperty.call(installerWorkflowMap, value);
+}
+
+function setupSharedResourceHandlers(): void {
+  ipcMain.handle('ipc.shared-config.get', async (event, payload: SharedConfigRequestPayload) => {
+    ensureAllowedOrigin(event);
+
+    if (!payload || typeof payload.id !== 'string') {
+      throw new Error('shared-config/invalid-args');
+    }
+
+    const entry = getSharedConfigEntry(payload.id);
+
+    if (!entry) {
+      log.warn('共享配置未找到', { id: payload.id });
+      throw new Error('shared-config/not-found');
+    }
+
+    return entry;
+  });
+
+  ipcMain.handle('ipc.workflow-map.sync', async (event, payload: WorkflowSyncPayload) => {
+    ensureAllowedOrigin(event);
+
+    if (!payload || typeof payload.flowId !== 'string') {
+      throw new Error('workflow/invalid-args');
+    }
+
+    if (!isWorkflowId(payload.flowId)) {
+      log.warn('未知 workflow flowId', { flowId: payload.flowId });
+      throw new Error('workflow/not-found');
+    }
+
+    const workflow = getWorkflowById(payload.flowId as WorkflowId);
+
+    if (!workflow) {
+      throw new Error('workflow/not-found');
+    }
+
+    if (payload.version === workflowVersion) {
+      return {
+        status: 'unchanged' as const,
+        version: workflowVersion,
+        flowId: workflow.flowId,
+        workflow,
+      };
+    }
+
+    return {
+      status: 'updated' as const,
+      version: workflowVersion,
+      flowId: workflow.flowId,
+      workflow,
+    };
   });
 }
 

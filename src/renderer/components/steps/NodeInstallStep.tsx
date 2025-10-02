@@ -3,7 +3,7 @@
  * 检测和安装Node.js运行环境
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -27,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { DetectionResult, DetectionStatus, NodeEnvironment } from '../../../shared/types/environment';
 import { ProgressEvent, InstallResult } from '../../../shared/types/installer';
+import useSharedConfig from '../../hooks/useSharedConfig';
 
 
 /**
@@ -46,6 +47,22 @@ const NodeInstallStep: React.FC<NodeInstallStepProps> = ({
   onNext: _onNext,
   canGoNext: _canGoNext
 }) => {
+  const { value: nodeVersioningConfig } = useSharedConfig<{
+    minimum: string;
+    recommended: string;
+    preferred: string;
+    ltsCandidate: string;
+  }>('environment.node.versioning');
+
+  const defaultVersioning = useMemo(() => ({
+    minimum: '16.0.0',
+    recommended: '18.17.0',
+    preferred: '20.11.1',
+    ltsCandidate: '22.3.0',
+  }), []);
+
+  const versioning = nodeVersioningConfig ?? defaultVersioning;
+
   // 状态管理
   const [checking, setChecking] = useState(false);
   const [installing, setInstalling] = useState(false);
@@ -62,35 +79,51 @@ const NodeInstallStep: React.FC<NodeInstallStepProps> = ({
     message: string;
     severity: 'success' | 'info' | 'warning';
   } => {
-    // 移除版本字符串中的"v"前缀，然后解析主版本号
     const cleanVersion = version.replace(/^v/, '');
-    const major = parseInt(cleanVersion.split('.')[0]);
+    const major = Number.parseInt(cleanVersion.split('.')[0] ?? '0', 10);
 
-    if (major >= 22) {
+    if (Number.isNaN(major)) {
+      return {
+        compatible: false,
+        message: `无法解析 Node.js 版本 ${version}`,
+        severity: 'warning'
+      };
+    }
+
+    const preferredMajor = Number.parseInt(versioning.preferred.split('.')[0] ?? '0', 10);
+    const recommendedMajor = Number.parseInt(versioning.recommended.split('.')[0] ?? '0', 10);
+    const minimumMajor = Number.parseInt(versioning.minimum.split('.')[0] ?? '0', 10);
+
+    if (major >= preferredMajor) {
       return {
         compatible: true,
-        message: `当前版本 ${version} 是最新的LTS版本，完全兼容`,
+        message: `当前版本 ${version} ≥ 首选版本 ${versioning.preferred}，完全兼容`,
         severity: 'success'
       };
-    } else if (major >= 18) {
+    }
+
+    if (major >= recommendedMajor) {
       return {
         compatible: true,
-        message: `当前版本 ${version} 兼容，建议保持`,
+        message: `当前版本 ${version} 满足推荐版本 ${versioning.recommended}`,
         severity: 'success'
       };
-    } else if (major >= 16) {
+    }
+
+    if (major >= minimumMajor) {
       return {
         compatible: true,
-        message: `当前版本 ${version} 兼容，可考虑升级到更新版本`,
+        message: `当前版本 ${version} ≥ 最低要求 ${versioning.minimum}，建议升级至 ${versioning.recommended}`,
         severity: 'info'
       };
     }
+
     return {
       compatible: false,
-      message: '版本过低，建议升级到16.0.0或更高版本',
+      message: `版本过低（${version}），请升级到至少 ${versioning.minimum}`,
       severity: 'warning'
     };
-  }, []);
+  }, [versioning]);
 
   /**
    * 检查Node.js安装状态
@@ -110,7 +143,7 @@ const NodeInstallStep: React.FC<NodeInstallStepProps> = ({
           installed,
           currentVersion: version,
           npmVersion,
-          recommendedVersion: '18.0.0', // 默认推荐版本
+          recommendedVersion: versioning.recommended,
           needsUpdate: false,
           supportedArchs: [],
           environmentVars: { PATH: [] }
@@ -138,7 +171,7 @@ const NodeInstallStep: React.FC<NodeInstallStepProps> = ({
         // 安装检查失败
         setDetectionResult({
           status: DetectionStatus.FAILED,
-          message: installResult.error || '检测失败',
+          message: installResult.error ?? installResult.errors?.[0]?.message ?? '检测失败',
           timestamp: new Date(),
           duration: 0
         });
@@ -190,7 +223,7 @@ const NodeInstallStep: React.FC<NodeInstallStepProps> = ({
         await checkNodeInstallation();
         onComplete(result);
       } else {
-        const errorMessage = result.error || '未知错误';
+        const errorMessage = result.errors?.[0]?.message ?? '未知错误';
         console.error('Node.js安装失败:', errorMessage);
         setInstallMessage(`安装失败: ${errorMessage}`);
       }
@@ -240,7 +273,7 @@ const NodeInstallStep: React.FC<NodeInstallStepProps> = ({
   const hasError = detectionResult?.status === DetectionStatus.FAILED;
   const versionCheck = nodeData?.currentVersion ?
     checkVersionCompatibility(nodeData.currentVersion) :
-    { compatible: false, message: '未检测到版本' };
+    { compatible: false, message: '未检测到版本', severity: 'warning' as const };
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>

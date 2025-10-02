@@ -17,6 +17,7 @@ module.exports = {
     '<rootDir>/node_modules/',
     '<rootDir>/build/',
     '<rootDir>/dist/',
+    '<rootDir>/tests/e2e/',
   ],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',

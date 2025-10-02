@@ -609,31 +609,6 @@ const metrics = performanceMonitor.getMetrics();
 const report = performanceMonitor.generateReport();
 ```
 
-### 国际化工具
-
-#### `I18nManager`
-
-国际化管理器。
-
-```typescript
-import { i18n } from '../shared/utils/i18n';
-
-// 获取本地化消息
-const message = i18n.getMessage('app.title');
-
-// 带参数的消息
-const message = i18n.getMessage('step.progress', {
-  current: 3,
-  total: 7
-});
-
-// 切换语言
-await i18n.setLanguage(SupportedLanguage.EN_US);
-
-// 获取当前语言
-const currentLang = i18n.getCurrentLanguage();
-```
-
 ## 📱 React组件API
 
 ### InstallWizard
@@ -732,33 +707,6 @@ const { measureInteraction } = usePerformance({
 await measureInteraction('button-click', async () => {
   // 处理点击事件
 });
-```
-
-### useDebounce
-
-防抖Hook。
-
-```typescript
-const debouncedValue = useDebounce(value, 300);
-
-useEffect(() => {
-  // 在debouncedValue变化时执行搜索
-  performSearch(debouncedValue);
-}, [debouncedValue]);
-```
-
-### useThrottle
-
-节流Hook。
-
-```typescript
-const throttledCallback = useThrottle(callback, 1000);
-
-return (
-  <button onClick={throttledCallback}>
-    点击我
-  </button>
-);
 ```
 
 ## 🔧 错误处理

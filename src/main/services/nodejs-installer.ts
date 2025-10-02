@@ -4,12 +4,28 @@
  */
 
 import { PrivilegeHelper, ExecuteResult } from './privilege-helper';
-import { ProgressEvent } from '../../shared/types/installer';
+import { InstallStep, ProgressEvent } from '../../shared/types/installer';
+import { getSharedConfigEntry } from '@shared/config';
 import * as path from 'path';
 import { app } from 'electron';
 
+const nodeMessagesEntry = getSharedConfigEntry<Record<string, string>>('installer.node.progressMessages');
+const NODE_MESSAGES = {
+  permissionCheck: '检查系统权限',
+  permissionGranted: '已具有管理员权限',
+  permissionPrompt: '请在弹出的对话框中输入管理员密码',
+  download: '正在下载 Node.js 安装包...',
+  verify: '验证安装包完整性...',
+  install: '正在安装 Node.js...',
+  configureEnv: '配置环境变量...',
+  finalize: '完成安装配置...',
+  success: 'Node.js 安装成功！',
+  genericError: '安装失败，请检查网络连接后重试',
+  ...nodeMessagesEntry?.value,
+};
+
 export interface InstallProgress {
-  step: string;
+  step: InstallStep;
   progress: number;
   message: string;
   status: 'running' | 'success' | 'error';
@@ -44,9 +60,9 @@ export class NodeJSInstaller {
 
       // 1. 检查当前权限
       this.emitProgress({
-        step: 'permission_check',
+        step: InstallStep.NODEJS_INSTALL,
         progress: 5,
-        message: '检查系统权限',
+        message: NODE_MESSAGES.permissionCheck,
         status: 'running'
       });
 
@@ -55,9 +71,9 @@ export class NodeJSInstaller {
 
       if (hasPrivileges) {
         this.emitProgress({
-          step: 'permission_ok',
+          step: InstallStep.NODEJS_INSTALL,
           progress: 10,
-          message: '已具有管理员权限',
+          message: NODE_MESSAGES.permissionGranted,
           status: 'running'
         });
       }
@@ -72,7 +88,7 @@ export class NodeJSInstaller {
         const error = `安装脚本不存在: ${scriptPath}`;
         console.error(error);
         this.emitProgress({
-          step: 'error',
+          step: InstallStep.NODEJS_INSTALL,
           progress: 0,
           message: error,
           status: 'error'
@@ -82,9 +98,9 @@ export class NodeJSInstaller {
 
       // 3. 弹出权限对话框并执行安装
       this.emitProgress({
-        step: 'permission_prompt',
+        step: InstallStep.NODEJS_INSTALL,
         progress: 15,
-        message: '请在弹出的对话框中输入管理员密码',
+        message: NODE_MESSAGES.permissionPrompt,
         status: 'running'
       });
 
@@ -105,7 +121,7 @@ export class NodeJSInstaller {
         const errorMessage = this.parseErrorMessage(result.stderr, result.error);
         console.error('脚本执行失败:', errorMessage);
         this.emitProgress({
-          step: 'error',
+          step: InstallStep.NODEJS_INSTALL,
           progress: 0,
           message: errorMessage,
           status: 'error'
@@ -117,9 +133,9 @@ export class NodeJSInstaller {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error('安装过程异常:', errorMessage);
       this.emitProgress({
-        step: 'error',
+        step: InstallStep.NODEJS_INSTALL,
         progress: 0,
-        message: `安装过程中发生错误: ${errorMessage}`,
+        message: `${NODE_MESSAGES.genericError}: ${errorMessage}`,
         status: 'error'
       });
       return { success: false, error: errorMessage };
@@ -205,17 +221,17 @@ export class NodeJSInstaller {
    */
   private async simulateProgress() {
     const steps = [
-      { progress: 20, message: '正在下载Node.js安装包...', status: 'running' as const },
-      { progress: 40, message: '验证安装包完整性...', status: 'running' as const },
-      { progress: 60, message: '正在安装Node.js...', status: 'running' as const },
-      { progress: 80, message: '配置环境变量...', status: 'running' as const },
-      { progress: 95, message: '完成安装配置...', status: 'running' as const },
-      { progress: 100, message: 'Node.js安装成功！', status: 'success' as const }
+      { progress: 20, message: NODE_MESSAGES.download, status: 'running' as const },
+      { progress: 40, message: NODE_MESSAGES.verify, status: 'running' as const },
+      { progress: 60, message: NODE_MESSAGES.install, status: 'running' as const },
+      { progress: 80, message: NODE_MESSAGES.configureEnv, status: 'running' as const },
+      { progress: 95, message: NODE_MESSAGES.finalize, status: 'running' as const },
+      { progress: 100, message: NODE_MESSAGES.success, status: 'success' as const }
     ];
 
     for (const step of steps) {
       this.emitProgress({
-        step: 'install',
+        step: InstallStep.NODEJS_INSTALL,
         ...step
       });
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -245,7 +261,7 @@ export class NodeJSInstaller {
     } else if (stderr) {
       return `安装失败: ${stderr}`;
     } else {
-      return '安装失败，请检查网络连接后重试';
+      return NODE_MESSAGES.genericError;
     }
   }
 

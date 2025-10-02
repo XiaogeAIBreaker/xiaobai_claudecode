@@ -20,6 +20,13 @@ import {
   getProgramVersion,
   compareVersions
 } from '../utils/system';
+import { getSharedConfigEntry } from '@shared/config';
+
+const nodeVersioningEntry = getSharedConfigEntry<{ minimum: string; recommended: string }>('environment.node.versioning');
+const NODE_VERSIONING = nodeVersioningEntry?.value ?? {
+  minimum: '16.0.0',
+  recommended: '18.17.0',
+};
 
 /**
  * Node.js检测配置
@@ -44,8 +51,8 @@ export class NodeJsDetector implements EnvironmentDetector {
   
   constructor(config?: Partial<NodeDetectorConfig>) {
     this.config = {
-      recommendedVersion: '18.17.0',
-      minVersion: '16.0.0',
+      recommendedVersion: NODE_VERSIONING.recommended,
+      minVersion: NODE_VERSIONING.minimum,
       timeout: 10000,
       ...config
     };

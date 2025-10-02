@@ -8,9 +8,48 @@ import { homedir } from 'os';
 import { join } from 'path';
 import * as sudo from '@vscode/sudo-prompt';
 import { log } from '../../shared/utils/logger';
-import { ProgressEvent, InstallResult } from '../../shared/types/installer';
+import { InstallStep, ProgressEvent, InstallResult } from '../../shared/types/installer';
 import { executeCommand } from '../../shared/utils/system';
 import { getEnhancedEnv } from '../../shared/utils/env-loader';
+import { getSharedConfigEntry } from '@shared/config';
+
+const cliPackageEntry = getSharedConfigEntry<{ npm: string; binaryName: string }>('installer.cli.package');
+const CLI_PACKAGE = {
+  npm: '@anthropic-ai/claude-code',
+  binaryName: 'claude',
+  ...cliPackageEntry?.value,
+};
+
+const cliMessagesEntry = getSharedConfigEntry<Record<string, string>>('installer.cli.progressMessages');
+const CLI_MESSAGES = {
+  preparing: '准备安装 Claude CLI...',
+  downloading: '正在下载 Claude CLI 依赖',
+  installing: '正在安装 Claude CLI',
+  configuring: '配置 Claude CLI 环境',
+  verifying: '验证 Claude CLI 安装结果',
+  verification: '验证安装...',
+  npmReady: 'npm 检查完成，尝试本地安装...',
+  fallback: '本地安装失败，尝试全局安装（需要管理员权限）...',
+  resolving: '正在解析依赖树...',
+  finishing: '正在完成本地安装...',
+  success: 'Claude CLI 安装成功',
+  failure: '安装失败',
+  sudoPrompt: '请在弹出的对话框中输入密码以授权全局安装...',
+  globalComplete: '全局安装完成...',
+  ...cliMessagesEntry?.value,
+};
+
+const cliMirrorsEntry = getSharedConfigEntry<Record<string, string>>('installer.cli.mirrors');
+const CLI_MIRRORS = {
+  global: 'https://registry.npmjs.org',
+  china: 'https://registry.npmmirror.com',
+  ...cliMirrorsEntry?.value,
+};
+
+const cliPathBannerEntry = getSharedConfigEntry<string>('installer.env.shellBanner');
+const CLI_PATH_BANNER = cliPathBannerEntry?.value ?? '# Claude CLI Path';
+const shellFilesEntry = getSharedConfigEntry<string[]>('installer.env.shellFiles');
+const SHELL_CONFIG_FILES = shellFilesEntry?.value ?? ['.zshrc', '.bashrc', '.bash_profile'];
 
 /**
  * Claude CLI 安装器类
@@ -29,10 +68,11 @@ export class ClaudeCliInstaller {
    * 检查 Claude CLI 是否已安装
    */
   async checkInstalled(): Promise<{ installed: boolean; version?: string }> {
+    const startTime = Date.now();
     try {
       log.info('检查 Claude CLI 安装状态');
 
-      const result = await executeCommand('claude --version', { timeout: 10000 });
+      const result = await executeCommand(`${CLI_PACKAGE.binaryName} --version`, { timeout: 10000 });
 
       if (result.exitCode === 0) {
         const version = result.stdout.trim();
@@ -52,14 +92,15 @@ export class ClaudeCliInstaller {
    * 安装 Claude CLI
    */
   async install(): Promise<InstallResult> {
+    const startTime = Date.now();
     try {
       log.info('开始安装 Claude CLI');
 
       // 通知开始安装
       this.notifyProgress({
-        step: 'claude-cli-install',
+        step: InstallStep.CLAUDE_CLI_SETUP,
         progress: 0,
-        message: '准备安装 Claude CLI...',
+        message: CLI_MESSAGES.preparing,
         status: 'running'
       });
 
@@ -70,9 +111,9 @@ export class ClaudeCliInstaller {
       }
 
       this.notifyProgress({
-        step: 'claude-cli-install',
+        step: InstallStep.CLAUDE_CLI_SETUP,
         progress: 10,
-        message: 'npm 检查完成，尝试本地安装...',
+        message: CLI_MESSAGES.npmReady,
         status: 'running'
       });
 
@@ -92,9 +133,9 @@ export class ClaudeCliInstaller {
       // 如果本地安装失败，尝试使用 sudo 进行全局安装
       if (!installSuccess) {
         this.notifyProgress({
-          step: 'claude-cli-install',
+          step: InstallStep.CLAUDE_CLI_SETUP,
           progress: 15,
-          message: '本地安装失败，尝试全局安装（需要管理员权限）...',
+          message: CLI_MESSAGES.fallback,
           status: 'running'
         });
 
@@ -104,9 +145,9 @@ export class ClaudeCliInstaller {
 
       // 验证安装
       this.notifyProgress({
-        step: 'claude-cli-install',
+        step: InstallStep.CLAUDE_CLI_SETUP,
         progress: 90,
-        message: '验证安装...',
+        message: CLI_MESSAGES.verification,
         status: 'running'
       });
 
@@ -117,33 +158,70 @@ export class ClaudeCliInstaller {
 
       // 安装成功
       this.notifyProgress({
-        step: 'claude-cli-install',
+        step: InstallStep.CLAUDE_CLI_SETUP,
         progress: 100,
-        message: `安装完成！版本: ${checkResult.version}`,
+        message: `${CLI_MESSAGES.success}，版本 ${checkResult.version}`,
         status: 'success'
       });
 
       log.info('Claude CLI 安装成功', { version: checkResult.version });
 
+      const totalDuration = Date.now() - startTime;
+
       return {
         success: true,
-        message: `Claude CLI 安装成功（版本 ${checkResult.version}）`
+        message: `Claude CLI 安装成功（版本 ${checkResult.version}）`,
+        installedComponents: [
+          {
+            name: 'Claude CLI',
+            version: checkResult.version,
+            installed: true,
+          },
+        ],
+        failedSteps: [],
+        totalDuration,
+        errors: [],
+        warnings: [],
+        summary: {
+          totalSteps: 1,
+          successSteps: 1,
+          failedSteps: 0,
+          skippedSteps: 0,
+        },
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log.error('Claude CLI 安装失败', error as Error);
 
       this.notifyProgress({
-        step: 'claude-cli-install',
+        step: InstallStep.CLAUDE_CLI_SETUP,
         progress: 0,
-        message: `安装失败: ${errorMessage}`,
+        message: `${CLI_MESSAGES.failure}: ${errorMessage}`,
         status: 'error'
       });
 
+      const totalDuration = Date.now() - startTime;
+
       return {
         success: false,
-        error: errorMessage,
-        errors: [{ message: errorMessage, recoverable: true }]
+        message: `${CLI_MESSAGES.failure}: ${errorMessage}`,
+        installedComponents: [],
+        failedSteps: [InstallStep.CLAUDE_CLI_SETUP],
+        totalDuration,
+        errors: [
+          {
+            step: InstallStep.CLAUDE_CLI_SETUP,
+            message: errorMessage,
+            recoverable: true,
+          },
+        ],
+        warnings: [],
+        summary: {
+          totalSteps: 1,
+          successSteps: 0,
+          failedSteps: 1,
+          skippedSteps: 0,
+        },
       };
     }
   }
@@ -158,7 +236,7 @@ export class ClaudeCliInstaller {
 
       // 配置 npm prefix 到用户目录
       const enhancedEnv = getEnhancedEnv();
-      const npmProcess = spawn('npm', ['install', '-g', '@anthropic-ai/claude-code', `--prefix=${npmGlobalPath}`], {
+      const npmProcess = spawn('npm', ['install', '-g', CLI_PACKAGE.npm, `--prefix=${npmGlobalPath}`], {
         shell: true,
         env: enhancedEnv
       });
@@ -177,33 +255,33 @@ export class ClaudeCliInstaller {
         if (output.includes('http fetch')) {
           currentProgress = Math.min(currentProgress + 5, 50);
           this.notifyProgress({
-            step: 'claude-cli-install',
+            step: InstallStep.CLAUDE_CLI_SETUP,
             progress: currentProgress,
-            message: '正在下载依赖包...',
+            message: CLI_MESSAGES.downloading,
             status: 'running'
           });
         } else if (output.includes('idealTree')) {
           currentProgress = 60;
           this.notifyProgress({
-            step: 'claude-cli-install',
+            step: InstallStep.CLAUDE_CLI_SETUP,
             progress: currentProgress,
-            message: '正在解析依赖树...',
+            message: CLI_MESSAGES.resolving,
             status: 'running'
           });
         } else if (output.includes('reify')) {
           currentProgress = 70;
           this.notifyProgress({
-            step: 'claude-cli-install',
+            step: InstallStep.CLAUDE_CLI_SETUP,
             progress: currentProgress,
-            message: '正在安装包...',
+            message: CLI_MESSAGES.installing,
             status: 'running'
           });
         } else if (output.includes('added') || output.includes('changed')) {
           currentProgress = 85;
           this.notifyProgress({
-            step: 'claude-cli-install',
+            step: InstallStep.CLAUDE_CLI_SETUP,
             progress: currentProgress,
-            message: '正在完成本地安装...',
+            message: CLI_MESSAGES.finishing,
             status: 'running'
           });
         }
@@ -243,7 +321,7 @@ export class ClaudeCliInstaller {
    */
   private async runGlobalInstallWithSudo(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const command = 'npm install -g @anthropic-ai/claude-code';
+      const command = `npm install -g ${CLI_PACKAGE.npm}`;
       log.info('使用 sudo 执行全局安装');
 
       let currentProgress = 20;
@@ -262,9 +340,9 @@ export class ClaudeCliInstaller {
 
         // 更新进度到 85%
         this.notifyProgress({
-          step: 'claude-cli-install',
+          step: InstallStep.CLAUDE_CLI_SETUP,
           progress: 85,
-          message: '全局安装完成...',
+          message: CLI_MESSAGES.globalComplete,
           status: 'running'
         });
 
@@ -273,9 +351,9 @@ export class ClaudeCliInstaller {
 
       // 显示权限请求提示
       this.notifyProgress({
-        step: 'claude-cli-install',
+        step: InstallStep.CLAUDE_CLI_SETUP,
         progress: 20,
-        message: '请在弹出的对话框中输入密码以授权全局安装...',
+        message: CLI_MESSAGES.sudoPrompt,
         status: 'running'
       });
     });
@@ -289,10 +367,9 @@ export class ClaudeCliInstaller {
       log.info('配置 PATH 环境变量');
 
       const binPath = join(npmGlobalPath, 'bin');
-      const shellConfigFiles = ['.zshrc', '.bashrc', '.bash_profile'];
-      const pathExport = `\n# Claude CLI Path\nexport PATH="${binPath}:$PATH"\n`;
+      const pathExport = `\n${CLI_PATH_BANNER}\nexport PATH="${binPath}:$PATH"\n`;
 
-      for (const configFile of shellConfigFiles) {
+      for (const configFile of SHELL_CONFIG_FILES) {
         const configPath = join(homedir(), configFile);
 
         try {
@@ -301,7 +378,8 @@ export class ClaudeCliInstaller {
 
           if (checkResult.stdout.trim() === 'exists') {
             // 检查是否已经配置过
-            const grepResult = await executeCommand(`grep -q "Claude CLI Path" "${configPath}" && echo "found"`, { timeout: 1000 });
+            const pattern = CLI_PATH_BANNER.replace(/"/g, '\\"');
+            const grepResult = await executeCommand(`grep -q "${pattern}" "${configPath}" && echo "found"`, { timeout: 1000 });
 
             if (grepResult.stdout.trim() !== 'found') {
               // 追加配置
@@ -327,9 +405,12 @@ export class ClaudeCliInstaller {
   /**
    * 通知进度更新
    */
-  private notifyProgress(progress: ProgressEvent): void {
+  private notifyProgress(progress: Partial<ProgressEvent> & { progress: number; message: string; step: InstallStep }): void {
     if (this.progressCallback) {
-      this.progressCallback(progress);
+      this.progressCallback({
+        type: progress.type ?? 'install',
+        ...progress,
+      } as ProgressEvent);
     }
   }
 }

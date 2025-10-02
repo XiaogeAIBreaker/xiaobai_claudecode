@@ -40,15 +40,32 @@ src/
 ├── shared/            # 共享代码模块
 │   ├── detectors/     # 环境检测模块
 │   ├── installers/    # 安装模块
+│   ├── config/        # SharedConfigurationCatalog（跨进程共享常量）
+│   ├── workflows/     # InstallerWorkflowMap（向导步骤定义）
 │   ├── utils/         # 工具函数
 │   └── types/         # TypeScript类型定义
 └── preload/           # 预加载脚本
 
 tests/                 # 测试文件
+scripts/               # 审计脚本与工具（如 shared-config-usage）
 config/                # 配置文件
 assets/                # 静态资源
 docs/                  # 项目文档
 ```
+
+## 📚 统一数据源与工作流
+
+- **共享配置目录**：`src/shared/config/catalog.ts` 提供 `SharedConfigurationCatalog`，主/预加载/渲染进程统一通过 `window.electronAPI.sharedConfig.get(id)` 访问。
+- **安装流程映射**：`src/shared/workflows/map.ts` 暴露 `InstallerWorkflowMap` 与版本号，Renderer 通过 `workflowMap.sync(flowId)` 校验流程是否最新。
+- **审计脚本**：运行 `scripts/audit/shared-config-usage.ts` 可输出 `docs/refactor/004/data-sources/post-scan.json`，验证共享配置是否被重复声明。
+
+```bash
+# 更新共享配置使用矩阵示例
+npx tsc scripts/audit/shared-config-usage.ts --module commonjs --target ES2020 --outDir .tmp/shared-config-audit
+node .tmp/shared-config-audit/scripts/audit/shared-config-usage.js
+```
+
+> 如已安装 `ts-node`，亦可直接运行 `npx ts-node scripts/audit/shared-config-usage.ts`。
 
 ## 🚀 开发指南
 

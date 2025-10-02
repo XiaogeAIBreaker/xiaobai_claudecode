@@ -5,6 +5,26 @@
 
 import { BrowserWindow, BrowserView } from 'electron';
 import { log } from '../../shared/utils/logger';
+import { getSharedConfigEntry } from '@shared/config';
+
+const googleSignupUrlEntry = getSharedConfigEntry<string>('installer.google.signupUrl');
+const GOOGLE_SIGNUP_URL = googleSignupUrlEntry?.value ?? 'https://accounts.google.com/signup';
+const googleWindowOptionsEntry = getSharedConfigEntry<{
+  width: number;
+  height: number;
+  offset: { x: number; y: number };
+  title: string;
+  alwaysOnTop: boolean;
+  loadTimeoutMs: number;
+}>('installer.google.windowOptions');
+const GOOGLE_WINDOW_OPTIONS = googleWindowOptionsEntry?.value ?? {
+  width: 1000,
+  height: 800,
+  offset: { x: 100, y: 50 },
+  title: 'Google 账号注册',
+  alwaysOnTop: true,
+  loadTimeoutMs: 30000,
+};
 
 /**
  * Google 认证助手类
@@ -36,21 +56,21 @@ export class GoogleAuthHelper {
 
       if (this.mainWindow && !this.mainWindow.isDestroyed()) {
         const mainBounds = this.mainWindow.getBounds();
-        x = mainBounds.x + 100;
-        y = mainBounds.y + 50;
+        x = mainBounds.x + GOOGLE_WINDOW_OPTIONS.offset.x;
+        y = mainBounds.y + GOOGLE_WINDOW_OPTIONS.offset.y;
       }
 
       // 创建新的浏览器窗口
       this.authWindow = new BrowserWindow({
-        width: 1000,
-        height: 800,
+        width: GOOGLE_WINDOW_OPTIONS.width,
+        height: GOOGLE_WINDOW_OPTIONS.height,
         x: x,
         y: y,
         // 移除 parent 属性，让窗口完全独立，更容易被看到
         modal: false,
         show: true,  // 立即显示，不等待页面加载
-        alwaysOnTop: true,  // 初始化时置顶
-        title: 'Google 账号注册',
+        alwaysOnTop: GOOGLE_WINDOW_OPTIONS.alwaysOnTop,  // 初始化时置顶
+        title: GOOGLE_WINDOW_OPTIONS.title,
         minimizable: true,
         maximizable: true,
         closable: true,
@@ -78,10 +98,10 @@ export class GoogleAuthHelper {
       // 设置 30 秒加载超时
       const loadTimeout = setTimeout(() => {
         if (this.authWindow && !this.authWindow.isDestroyed()) {
-          log.error('Google 注册页面加载超时（30秒）');
+          log.error(`Google 注册页面加载超时（${GOOGLE_WINDOW_OPTIONS.loadTimeoutMs / 1000}秒）`);
           // 不关闭窗口，让用户看到加载失败的页面
         }
-      }, 30000);
+      }, GOOGLE_WINDOW_OPTIONS.loadTimeoutMs);
 
       // 监听加载完成
       this.authWindow.webContents.on('did-finish-load', () => {
@@ -122,7 +142,7 @@ export class GoogleAuthHelper {
 
       // 开始加载 Google 注册页面
       log.info('开始加载 Google 注册页面');
-      await this.authWindow.loadURL('https://accounts.google.com/signup');
+      await this.authWindow.loadURL(GOOGLE_SIGNUP_URL);
       log.info('loadURL 调用完成');
 
     } catch (error) {
